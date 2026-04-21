@@ -63,7 +63,7 @@
 						<svg class="w-5 h-5 mr-3 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
 						Inventory
 					</a>
-					{#if data.user?.role === 'ADMIN_UP3'}
+					{#if data.user?.role === 'ADMIN_UP3' || data.user?.role === 'ADMIN_ULP'}
 						<a href="/usage-tracker" class="px-4 py-3 rounded-lg { $page.url.pathname.startsWith('/usage-tracker') ? 'bg-white/20 font-semibold shadow-inner border-l-4 border-yellow-400' : 'hover:bg-white/10 text-white/90' } transition-all flex items-center">
 							<svg class="w-5 h-5 mr-3 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
 							Usage Tracker

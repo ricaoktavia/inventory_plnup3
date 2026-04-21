@@ -37,7 +37,7 @@ export const transactions = mysqlTable('transactions', {
 	id: serial('id').primaryKey(),
 	referenceNumber: varchar('reference_number', { length: 100 }).notNull().unique(),
 	type: mysqlEnum('type', ['DISTRIBUTION', 'USAGE', 'INCOMING']).notNull(),
-	status: mysqlEnum('status', ['DRAFT', 'APPROVED_ULP', 'COMPLETED']).notNull().default('DRAFT'),
+	status: mysqlEnum('status', ['REQUESTED', 'DRAFT', 'APPROVED_ULP', 'COMPLETED']).notNull().default('DRAFT'),
 	createdBy: int('created_by').notNull().references(() => users.id),
 	targetUlpId: int('target_ulp_id').references(() => ulps.id),
 	createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -46,7 +46,8 @@ export const transactions = mysqlTable('transactions', {
 	usagePurpose: varchar('usage_purpose', { length: 255 }),
 	
 	// Storing image and QR directly via Base64 in LONGTEXT 
-	photoBase64: text('photo_base64'), // Drizzle 'text' in mapped mysql text type can be mapped to LONGTEXT via custom type, but text usually maps to TEXT. Let's use custom type or just raw SQL for LONGTEXT later, text is fine for drizzle schema but we'll manually ensure LONGTEXT in SQL script.
+	requestLetterBase64: text('request_letter_base64'),
+	photoBase64: text('photo_base64'), 
 	qrCodeBase64: text('qr_code_base64')
 });
 

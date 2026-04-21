@@ -33,17 +33,22 @@
 			<!-- Dropdown Filter ULP -->
 			<form method="GET" class="flex flex-col flex-1 md:flex-initial">
 				<label for="ulpId" class="text-xs text-gray-500 mb-1 font-semibold">Lihat Stok Lokasi:</label>
-				<select name="ulpId" id="ulpId" onchange={(e) => e.currentTarget.form?.submit()} class="border border-gray-300 rounded-lg px-3 py-[9px] text-sm focus:ring-cyan-500 outline-none bg-white cursor-pointer hover:bg-gray-50 shadow-sm">
-					<option value="up3" selected={data.selectedUlpId === 'up3'}>Gudang Pusat UP3</option>
-					{#each data.allUlps as ulp}
-						<option value={ulp.id} selected={data.selectedUlpId === ulp.id.toString()}>Gudang ULP {ulp.name}</option>
-					{/each}
-				</select>
+				<div class="flex gap-2">
+					<select name="ulpId" id="ulpId" onchange={(e) => e.currentTarget.form?.submit()} class="border border-gray-300 rounded-lg px-3 py-[9px] text-sm focus:ring-cyan-500 outline-none bg-white cursor-pointer hover:bg-gray-50 shadow-sm font-bold text-[#0A417A]">
+						<option value="rekap" selected={data.selectedUlpId === 'rekap'}>📊 Rekap Seluruh Unit (Konsolidasi)</option>
+						<option value="up3" selected={data.selectedUlpId === 'up3'}>🏠 Gudang Pusat UP3</option>
+						<optgroup label="Daftar Gudang ULP">
+							{#each data.allUlps as ulp}
+								<option value={ulp.id} selected={data.selectedUlpId === ulp.id.toString()}>Gudang ULP {ulp.name}</option>
+							{/each}
+						</optgroup>
+					</select>
+				</div>
 			</form>
 		{/if}
 
-		{#if data.userRole === 'ADMIN_UP3' && (data.selectedUlpId === 'up3' || !data.selectedUlpId)}
-			<!-- New Button now properly triggers the modal -->
+		{#if data.userRole === 'ADMIN_UP3' && data.selectedUlpId === 'up3'}
+			<!-- New Button now properly triggers the modal - Only in UP3 mode -->
 			<button onclick={() => isModalOpen = true} class="bg-[#0A417A] hover:bg-[#0D5BB4] text-white text-sm font-bold py-[9px] px-5 rounded-lg flex items-center shadow-md transition-all h-full mt-auto shrink-0 border border-transparent">
 				<svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
 				Baru
@@ -61,14 +66,24 @@
 
 <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden flex flex-col">
 	<div class="overflow-x-auto">
-		<table class="w-full text-left border-collapse">
+		<table class="w-full text-left border-collapse min-w-[800px]">
 			<thead>
-				<tr class="bg-gray-50 text-gray-600 text-sm border-b border-gray-200 uppercase tracking-wider">
-					<th class="px-6 py-4 font-semibold w-16 text-center">ID</th>
-					<th class="px-6 py-4 font-semibold">Nama Material</th>
-					<th class="px-6 py-4 font-semibold">Satuan</th>
-					<th class="px-6 py-4 font-semibold text-center">Stok Gudang ({data.ulpName})</th>
-					{#if data.userRole === 'ADMIN_UP3'}
+				<tr class="bg-gray-50 text-gray-600 text-[10px] border-b border-gray-200 uppercase tracking-wider">
+					<th class="px-4 py-4 font-black w-12 text-center sticky left-0 bg-gray-50 z-10 border-r border-gray-100">ID</th>
+					<th class="px-4 py-4 font-black sticky left-12 bg-gray-50 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.05)] border-r border-gray-100">Nama Material</th>
+					<th class="px-4 py-4 font-black text-center">Unit</th>
+					
+					{#if data.selectedUlpId === 'rekap'}
+						<th class="px-4 py-4 font-black text-center bg-blue-50/50 text-[#0A417A]">Pusat</th>
+						{#each data.allUlps as ulp}
+							<th class="px-4 py-4 font-black text-center">{ulp.name}</th>
+						{/each}
+						<th class="px-4 py-4 font-black text-center bg-yellow-50 text-yellow-800">Total</th>
+					{:else}
+						<th class="px-6 py-4 font-semibold text-center text-[#0A417A] bg-blue-50/30">Stok {data.ulpName}</th>
+					{/if}
+
+					{#if data.userRole === 'ADMIN_UP3' && data.selectedUlpId === 'up3'}
 						<th class="px-6 py-4 font-semibold text-right">Aksi</th>
 					{/if}
 				</tr>
@@ -76,24 +91,41 @@
 			<tbody class="divide-y divide-gray-100">
 				{#if data.materials.length === 0}
 					<tr>
-						<td colspan="5" class="px-6 py-10 text-center text-gray-500 bg-gray-50/50">Belum ada material yang terdaftar.</td>
+						<td colspan="20" class="px-6 py-10 text-center text-gray-500 bg-gray-50/50">Belum ada material yang terdaftar.</td>
 					</tr>
 				{:else}
-					{#each data.materials as material, i}
-						<tr class="hover:bg-gray-50/80 transition-colors duration-150">
-							<td class="px-6 py-4 text-center text-gray-400 font-medium">{material.id}</td>
-							<td class="px-6 py-4">
-								<div class="font-bold text-[#0A417A] text-base">{material.name}</div>
+					{#each data.materials as material}
+						<tr class="hover:bg-gray-50/80 transition-colors duration-150 text-xs">
+							<td class="px-4 py-4 text-center text-gray-400 font-medium sticky left-0 bg-white border-r border-gray-50">{material.id}</td>
+							<td class="px-4 py-4 sticky left-12 bg-white z-0 shadow-[2px_0_5px_rgba(0,0,0,0.02)] border-r border-gray-50">
+								<div class="font-bold text-[#0A417A] uppercase truncate max-w-[200px]">{material.name}</div>
 							</td>
-							<td class="px-6 py-4">
-								<span class="text-gray-600 font-medium">
-									{material.unit}
-								</span>
-							</td>
-							<td class="px-6 py-4 text-center font-bold {(material.stockQuantity || 0) < 100 ? 'text-red-500' : 'text-green-600'}">
-								{material.stockQuantity || 0}
-							</td>
-							{#if data.userRole === 'ADMIN_UP3'}
+							<td class="px-4 py-4 text-center font-medium text-gray-500">{material.unit}</td>
+
+							{#if data.selectedUlpId === 'rekap'}
+								<!-- PUSAT column -->
+								<td class="px-4 py-4 text-center font-black bg-blue-50/20 text-[#0A417A]">
+									{data.stockMatrix[material.id]['up3'] || 0}
+								</td>
+								<!-- ULP columns -->
+								{#each data.allUlps as ulp}
+									<td class="px-4 py-4 text-center font-medium {data.stockMatrix[material.id][ulp.id] > 0 ? 'text-gray-900' : 'text-gray-300'}">
+										{data.stockMatrix[material.id][ulp.id] || 0}
+									</td>
+								{/each}
+								<!-- TOTAL column -->
+								<td class="px-4 py-4 text-center font-black bg-yellow-50 text-yellow-700">
+									{Object.values(data.stockMatrix[material.id]).reduce((a, b) => a + b, 0)}
+								</td>
+							{:else}
+								<!-- Single Unit Column -->
+								{@const qty = data.stockMatrix[material.id][data.selectedUlpId] || 0}
+								<td class="px-6 py-4 text-center font-black text-lg {qty < 50 ? 'text-red-500' : 'text-green-600'}">
+									{qty}
+								</td>
+							{/if}
+
+							{#if data.userRole === 'ADMIN_UP3' && data.selectedUlpId === 'up3'}
 								<td class="px-6 py-4 text-right flex justify-end items-center gap-3">
 									<button onclick={() => editData = {id: material.id, name: material.name, unit: material.unit}} class="text-[#0188CE] hover:text-[#0A417A] font-medium text-sm transition-colors">Edit</button>
 									<form method="POST" action="?/hapus" use:enhance={({ cancel }) => {

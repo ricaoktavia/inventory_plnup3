@@ -1,50 +1,47 @@
 import { db } from '$lib/server/db';
 import { materials, stocks, ulps, transactions, transactionDetails } from '$lib/server/db/schema';
 import type { PageServerLoad, Actions } from './$types';
-import { desc, eq, and, isNull, sql } from 'drizzle-orm';
+import { desc, eq, and, isNull, sql, asc } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const user = locals.user;
 	
-	let condition;
-	let selectedUlpId = url.searchParams.get('ulpId');
-	let displayUlpName = 'Pusat UP3';
-
-	let allUlps: any[] = [];
-
-	if (user?.role === 'ADMIN_UP3') {
-		allUlps = await db.select().from(ulps);
-		
-		if (selectedUlpId && selectedUlpId !== 'up3') {
-			condition = eq(stocks.ulpId, parseInt(selectedUlpId));
-			const selectedUlp = allUlps.find(u => u.id === parseInt(selectedUlpId as string));
-			if (selectedUlp) displayUlpName = `ULP ${selectedUlp.name}`;
-		} else {
-			condition = isNull(stocks.ulpId); // Default initial view is UP3
+	const selectedUlpId = url.searchParams.get('ulpId') || (user?.role === 'ADMIN_UP3' ? 'rekap' : user?.ulpId?.toString());
+	
+	const allUlps = await db.select().from(ulps).orderBy(asc(ulps.name));
+	const allMaterials = await db.select().from(materials).orderBy(materials.id);
+	
+	// Fetch ALL stocks for matrix view
+	const allStocks = await db.select().from(stocks);
+	const stockMatrix: Record<number, Record<string, number>> = {};
+	
+	allMaterials.forEach(m => {
+		stockMatrix[m.id] = { 'up3': 0 };
+		allUlps.forEach(u => stockMatrix[m.id][u.id.toString()] = 0);
+	});
+	
+	allStocks.forEach(s => {
+		const key = s.ulpId ? s.ulpId.toString() : 'up3';
+		if (stockMatrix[s.materialId]) {
+			stockMatrix[s.materialId][key] = s.quantity;
 		}
-	} else {
-		condition = eq(stocks.ulpId, user?.ulpId as number);
-		displayUlpName = `ULP ${user?.ulpName}`;
-	}
+	});
 
-	const allMaterials = await db.select({
-		id: materials.id,
-		name: materials.name,
-		unit: materials.unit,
-		description: materials.description,
-		stockQuantity: stocks.quantity
-	})
-	.from(materials)
-	.leftJoin(stocks, and(eq(materials.id, stocks.materialId), condition))
-	.orderBy(materials.id);
+	let displayUlpName = 'Seluruh Unit';
+	if (selectedUlpId === 'up3') displayUlpName = 'Pusat UP3';
+	else if (selectedUlpId && selectedUlpId !== 'rekap') {
+		const found = allUlps.find(u => u.id.toString() === selectedUlpId);
+		if (found) displayUlpName = `ULP ${found.name}`;
+	}
 
 	return {
 		materials: allMaterials,
-		userRole: user?.role,
-		ulpName: displayUlpName,
+		stockMatrix,
 		allUlps,
-		selectedUlpId: selectedUlpId || 'up3'
+		userRole: user?.role,
+		selectedUlpId,
+		ulpName: displayUlpName
 	};
 };
 
