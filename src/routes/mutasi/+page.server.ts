@@ -141,6 +141,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 			ref: transactions.referenceNumber,
 			ulpName: ulps.name,
 			date: transactions.createdAt,
+			type: transactions.type,
 			requestLetter: transactions.requestLetterBase64
 		})
 		.from(transactions)
@@ -447,6 +448,83 @@ export const actions: Actions = {
 			.where(eq(transactions.id, trx.id));
 
 		return { success: true, message: 'Mutasi Stok Multi-item Selesai!' };
+	},
+
+	// (ULP) Input Stok Awal
+	stokAwal: async ({ request, locals }) => {
+		const user = locals.user;
+		if (user?.role !== 'ADMIN_ULP') return fail(403, { error: 'Hanya Admin ULP yang dapat input Stok Awal.' });
+
+		const formData = await request.formData();
+		const materialIds = formData.getAll('materialId[]');
+		const jumlahs = formData.getAll('jumlah[]');
+
+		if (materialIds.length === 0) {
+			return fail(400, { error: 'Pilih minimal 1 material!' });
+		}
+
+		const refNumber = `STOK-AWAL-${user.ulpId}-${Date.now()}`;
+		const [insertTrx] = await db.insert(transactions).values({
+			referenceNumber: refNumber,
+			type: 'INITIAL_STOCK',
+			status: 'REQUESTED',
+			createdBy: user.id,
+			targetUlpId: user.ulpId
+		});
+
+		for (let i = 0; i < materialIds.length; i++) {
+			await db.insert(transactionDetails).values({
+				transactionId: insertTrx.insertId,
+				materialId: parseInt(materialIds[i] as string),
+				quantity: parseInt(jumlahs[i] as string),
+				description: 'Input Stok Awal'
+			});
+		}
+
+		return { success: true, message: 'Stok Awal Berhasil Diajukan (Menunggu Konfirmasi UP3)!' };
+	},
+
+	// (UP3) Konfirmasi Stok Awal
+	konfirmasiStokAwal: async ({ request, locals }) => {
+		const user = locals.user;
+		if (user?.role !== 'ADMIN_UP3') return fail(403, { error: 'Akses ditolak.' });
+
+		const formData = await request.formData();
+		const trxId = formData.get('transactionId') as string;
+		if (!trxId) return fail(400, { error: 'ID Transaksi tidak valid.' });
+
+		const [trx] = await db.select().from(transactions).where(eq(transactions.id, parseInt(trxId)));
+		if (!trx || trx.status !== 'REQUESTED' || trx.type !== 'INITIAL_STOCK') {
+			return fail(400, { error: 'Transaksi tidak valid.' });
+		}
+
+		const details = await db.select().from(transactionDetails).where(eq(transactionDetails.transactionId, trx.id));
+		if (details.length === 0) {
+			return fail(400, { error: 'Detail transaksi stok awal tidak ditemukan.' });
+		}
+
+		// Update or Insert Stok ULP
+		for (const detail of details) {
+			const [ulpStock] = await db.select().from(stocks).where(and(eq(stocks.materialId, detail.materialId), eq(stocks.ulpId, trx.targetUlpId!)));
+			
+			if (ulpStock) {
+				await db.update(stocks)
+					.set({ quantity: detail.quantity }) // Set to exactly what was inputted
+					.where(eq(stocks.id, ulpStock.id));
+			} else {
+				await db.insert(stocks).values({
+					materialId: detail.materialId,
+					ulpId: trx.targetUlpId!,
+					quantity: detail.quantity
+				});
+			}
+		}
+
+		await db.update(transactions)
+			.set({ status: 'COMPLETED', approvedAt: new Date() })
+			.where(eq(transactions.id, trx.id));
+
+		return { success: true, message: 'Stok Awal Berhasil Dikonfirmasi! Stok ULP telah diperbarui.' };
 	}
 };
 
