@@ -36,7 +36,7 @@ export const transactions = mysqlTable('transactions', {
 	id: int('id').primaryKey().autoincrement(),
 	referenceNumber: varchar('reference_number', { length: 100 }).notNull().unique(),
 	type: mysqlEnum('type', ['DISTRIBUTION', 'USAGE', 'INCOMING', 'INITIAL_STOCK']).notNull(),
-	status: mysqlEnum('status', ['REQUESTED', 'DRAFT', 'APPROVED_ULP', 'COMPLETED']).notNull().default('DRAFT'),
+	status: mysqlEnum('status', ['REQUESTED', 'DRAFT', 'APPROVED_ULP', 'COMPLETED', 'REJECTED']).notNull().default('DRAFT'),
 	createdBy: int('created_by').notNull().references(() => users.id),
 	targetUlpId: int('target_ulp_id').references(() => ulps.id),
 	createdAt: timestamp('created_at').notNull().defaultNow(),

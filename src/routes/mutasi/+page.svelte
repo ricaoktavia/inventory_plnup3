@@ -132,8 +132,9 @@
 		materialRows = materialRows.filter((_, i) => i !== index);
 	}
 
-	// Tabs for ULP
-	let ulpActiveTab = $state($page.url.searchParams.get('tab') || 'PERMINTAAN'); // PERMINTAAN | VERIFIKASI | PEMAKAIAN
+	// Tabs for ULP & UP3
+	let ulpActiveTab = $state($page.url.searchParams.get('tab') || 'PERMINTAAN'); // PERMINTAAN | VERIFIKASI | PEMAKAIAN | STOK_AWAL
+	let up3ActiveTab = $state($page.url.searchParams.get('tab') || 'DISTRIBUSI'); // DISTRIBUSI | STOK_AWAL | KONFIRMASI_STOK
 
 	// Selected Pending Verifikasi State (ULP)
 	let selectedVerifId = $state('');
@@ -183,9 +184,31 @@
 			{/if}
 
 			{#if data.userRole === 'ADMIN_UP3'}
-				<h2 class="text-xl font-bold text-[#0A417A] mb-6 border-b border-gray-100 pb-2">Proses Distribusi Material</h2>
+				<div class="flex border-b border-gray-200 mb-6 bg-gray-50 p-1 rounded-t-lg">
+					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'DISTRIBUSI' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => up3ActiveTab = 'DISTRIBUSI'}>
+						1. DISTRIBUSI MATERIAL
+					</button>
+					{#if data.materials.filter(m => !m.hasStockRecord).length > 0 || up3ActiveTab === 'STOK_AWAL'}
+						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'STOK_AWAL' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => up3ActiveTab = 'STOK_AWAL'}>
+							2. INPUT STOK AWAL
+						</button>
+					{/if}
+					{#if (data.history || []).filter(t => t.status === 'REQUESTED' && t.type === 'INITIAL_STOCK').length > 0 || up3ActiveTab === 'KONFIRMASI_STOK'}
+						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'KONFIRMASI_STOK' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => up3ActiveTab = 'KONFIRMASI_STOK'}>
+							3. PERSETUJUAN STOK ULP
+							{#if (data.history || []).filter(t => t.status === 'REQUESTED' && t.type === 'INITIAL_STOCK').length > 0}
+								<span class="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full ml-1">
+									{(data.history || []).filter(t => t.status === 'REQUESTED' && t.type === 'INITIAL_STOCK').length}
+								</span>
+							{/if}
+						</button>
+					{/if}
+				</div>
 
-				<form method="POST" action="?/draft" use:enhance={handleEnhance} class="space-y-5 flex-1 flex flex-col">
+				{#if up3ActiveTab === 'DISTRIBUSI'}
+					<h2 class="text-xl font-bold text-[#0A417A] mb-6 border-b border-gray-100 pb-2">Proses Distribusi Material</h2>
+
+					<form method="POST" action="?/draft" use:enhance={handleEnhance} class="space-y-5 flex-1 flex flex-col">
 					<!-- Pilih Permintaan ULP (Opsional) -->
 					<div class="space-y-1.5">
 						<div class="flex justify-between items-center">
@@ -307,6 +330,169 @@
 					</button>
 				</form>
 
+				{:else if up3ActiveTab === 'STOK_AWAL'}
+					<div class="flex-1 flex flex-col space-y-6">
+						<h2 class="text-xl font-bold text-[#0A417A] mb-2 font-black italic tracking-tighter uppercase">Input Stok Awal Pusat (UP3)</h2>
+						
+						<form method="POST" action="?/stokAwal" use:enhance={handleEnhance} class="space-y-6 flex-1 flex flex-col">
+							<!-- Material List -->
+							<div class="border border-gray-200 p-5 rounded-2xl bg-gray-50/50 shadow-inner flex-1">
+								<div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-2">
+									<span class="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Rincian Material Stok Awal Pusat</span>
+									<button type="button" onclick={addMaterialRow} class="text-[10px] font-black bg-[#FFD500] text-[#0A417A] px-3 py-1 rounded-lg shadow-sm hover:scale-105 transition-all border border-yellow-500">+ TAMBAH</button>
+								</div>
+								<div class="space-y-3">
+									{#each materialRows as row, i}
+										<div class="p-4 border border-gray-200 rounded-2xl bg-white relative shadow-sm">
+											<div class="flex justify-between items-start mb-3 border-b border-gray-50 pb-2">
+												<span class="text-[9px] font-black text-[#0A417A] bg-blue-50 px-2 py-0.5 rounded uppercase tracking-wider">Item #{i + 1}</span>
+												{#if materialRows.length > 1}
+													<button type="button" onclick={() => removeMaterialRow(i)} class="text-red-400 hover:text-red-600 transition-colors p-1">
+														<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+													</button>
+												{/if}
+											</div>
+
+											<div class="space-y-4">
+												<!-- Material Select -->
+												<div>
+													<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Pilih Material</label>
+													<select 
+														name="materialId[]" 
+														bind:value={row.materialId}
+														required 
+														class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] cursor-pointer focus:border-cyan-500 py-1 transition-colors"
+													>
+														<option value="">Pilih Material...</option>
+														{#each data.materials.filter(m => !m.hasStockRecord) as mat}
+															<option value={mat.id.toString()}>
+																{mat.name} ({mat.unit})
+															</option>
+														{/each}
+													</select>
+												</div>
+
+												<div class="flex gap-4 items-start">
+													<!-- Quantity -->
+													<div class="w-full">
+														<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Jumlah Fisik Saat Ini</label>
+														<div class="flex items-center gap-2">
+															<input 
+																type="number" 
+																name="jumlah[]" 
+																placeholder="0" 
+																bind:value={row.jumlah}
+																required 
+																min="0"
+																class="flex-1 border-b-2 border-gray-100 rounded px-2 py-1 text-sm font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors"
+															>
+															<span class="text-[10px] font-bold text-gray-400 truncate w-16">{data.materials.find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									{/each}
+								</div>
+							</div>
+
+							<button 
+								type="submit" 
+								class="w-full bg-[#0188CE] hover:bg-blue-600 text-white font-black text-lg py-4 rounded-xl shadow-lg mt-auto disabled:opacity-50"
+								disabled={isSubmitting}
+							>
+								{#if isSubmitting}
+									MEMPROSES...
+								{:else}
+									SIMPAN STOK AWAL
+								{/if}
+							</button>
+						</form>
+					</div>
+				{:else if up3ActiveTab === 'KONFIRMASI_STOK'}
+					{@const pendingStocks = (data.history || []).filter(t => t.status === 'REQUESTED' && t.type === 'INITIAL_STOCK')}
+					{@const groupedStocks = pendingStocks.reduce((acc, trx) => {
+						if (!acc[trx.targetUlp]) acc[trx.targetUlp] = [];
+						acc[trx.targetUlp].push(trx);
+						return acc;
+					}, {} as Record<string, typeof pendingStocks>)}
+					<div class="flex-1 flex flex-col space-y-6">
+						<h2 class="text-xl font-bold text-[#0A417A] mb-2 font-black italic tracking-tighter uppercase">Persetujuan Stok Awal ULP</h2>
+						
+						{#if pendingStocks && pendingStocks.length > 0}
+							<div class="space-y-6 flex-1 overflow-y-auto pr-2 custom-scroll max-h-[550px]">
+								{#each Object.entries(groupedStocks) as [ulpName, transactions]}
+									<div class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+										<!-- Group Header -->
+										<div class="bg-gray-50 border-b border-gray-200 px-5 py-3 flex items-center justify-between">
+											<div class="flex items-center gap-3">
+												<div class="bg-white p-1.5 rounded-lg shadow-sm border border-gray-100">
+													<svg class="w-5 h-5 text-[#0188CE]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+												</div>
+												<h3 class="font-black text-[#0A417A] text-sm uppercase tracking-widest">{ulpName}</h3>
+											</div>
+											<span class="bg-[#0A417A] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-sm">{transactions.length} Pengajuan</span>
+										</div>
+										
+										<!-- Group Content (Requests) -->
+										<div class="p-5 space-y-5 bg-gray-50/30">
+											{#each transactions as trx}
+												<div class="border border-yellow-200 rounded-xl p-5 shadow-sm bg-white relative transition-all hover:shadow-md">
+													<div class="flex justify-between items-center mb-3 border-b border-gray-50 pb-2">
+														<div>
+															<p class="text-[10px] font-black text-gray-400 italic">No. Referensi: <span class="text-gray-600">{trx.referenceNumber}</span></p>
+															<p class="text-[10px] font-bold text-gray-400 italic">Tanggal: {new Date(trx.date).toLocaleDateString('id-ID')}</p>
+														</div>
+														<span class="bg-yellow-400 text-[#0A417A] text-[8px] font-black px-2 py-1 rounded shadow-sm">BUTUH PERSETUJUAN</span>
+													</div>
+
+													<div class="space-y-1 bg-gray-50 p-4 rounded-xl border border-gray-100 mb-5 shadow-inner">
+														<p class="text-[9px] font-black text-gray-400 uppercase mb-3">Rincian Material yang Diajukan:</p>
+														{#each trx.items as item}
+															<div class="flex justify-between items-center text-xs font-bold text-gray-700 border-b border-gray-100 pb-1.5 mb-1.5 last:border-0 last:pb-0 last:mb-0">
+																<span class="uppercase">{item.name}</span>
+																<span class="text-[#0A417A] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{item.quantity} Unit</span>
+															</div>
+														{/each}
+													</div>
+
+													<div class="flex gap-3 mt-4">
+														<form method="POST" action="?/tolakStokAwal" use:enhance={handleEnhance} class="flex-1">
+															<input type="hidden" name="transactionId" value={trx.id} />
+															<button class="w-full text-[11px] bg-red-500 text-white font-black py-2.5 rounded-xl shadow-sm hover:bg-red-600 transition-all disabled:opacity-50" disabled={isSubmitting}>
+																{#if isSubmitting}
+																	MEMPROSES...
+																{:else}
+																	TOLAK DATA
+																{/if}
+															</button>
+														</form>
+														<form method="POST" action="?/konfirmasiStokAwal" use:enhance={handleEnhance} class="flex-1">
+															<input type="hidden" name="transactionId" value={trx.id} />
+															<button class="w-full text-[11px] bg-green-500 text-white font-black py-2.5 rounded-xl shadow-sm hover:bg-green-600 transition-all disabled:opacity-50" disabled={isSubmitting}>
+																{#if isSubmitting}
+																	MEMPROSES...
+																{:else}
+																	TERIMA STOK
+																{/if}
+															</button>
+														</form>
+													</div>
+												</div>
+											{/each}
+										</div>
+									</div>
+								{/each}
+							</div>
+						{:else}
+							<div class="flex-1 flex flex-col items-center justify-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-8 min-h-[300px]">
+								<svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+								<p class="text-sm font-bold text-gray-400">Tidak ada pengajuan stok awal dari ULP yang menunggu persetujuan.</p>
+							</div>
+						{/if}
+					</div>
+				{/if}
+
 			{:else}
 				<!-- TABS BAGI ULP -->
 				<div class="flex border-b border-gray-200 mb-6 bg-gray-50 p-1 rounded-t-lg">
@@ -319,9 +505,11 @@
 					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'PEMAKAIAN' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => ulpActiveTab = 'PEMAKAIAN'}>
 						3. PEMAKAIAN
 					</button>
-					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'STOK_AWAL' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => ulpActiveTab = 'STOK_AWAL'}>
-						4. STOK AWAL
-					</button>
+					{#if data.materials.filter(m => !m.hasStockRecord).length > 0 || ulpActiveTab === 'STOK_AWAL'}
+						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'STOK_AWAL' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => ulpActiveTab = 'STOK_AWAL'}>
+							4. STOK AWAL
+						</button>
+					{/if}
 				</div>
 
 				{#if ulpActiveTab === 'PERMINTAAN'}
@@ -562,7 +750,7 @@
 														class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] cursor-pointer focus:border-cyan-500 py-1 transition-colors"
 													>
 														<option value="">Pilih Material...</option>
-														{#each data.materials as mat}
+														{#each data.materials.filter(m => !m.hasStockRecord) as mat}
 															<option value={mat.id.toString()}>
 																{mat.name} ({mat.unit})
 															</option>
@@ -653,8 +841,10 @@
 								<span class="bg-yellow-400 text-[#0A417A] text-[8px] font-black px-2 py-0.5 rounded shadow-sm">DRAFT</span>
 							{:else if trx.status === 'APPROVED_ULP'}
 								<span class="bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm">CONFIRMED</span>
-							{:else}
+							{:else if trx.status === 'COMPLETED'}
 								<span class="bg-green-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm italic">SUCCESS</span>
+							{:else if trx.status === 'REJECTED'}
+								<span class="bg-gray-800 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm">REJECTED</span>
 							{/if}
 						</div>
 
@@ -695,16 +885,7 @@
 									</button>
 								</form>
 							{:else if trx.status === 'REQUESTED' && trx.type === 'INITIAL_STOCK' && data.userRole === 'ADMIN_UP3'}
-								<form method="POST" action="?/konfirmasiStokAwal" use:enhance={handleEnhance}>
-									<input type="hidden" name="transactionId" value={trx.id} />
-									<button class="text-[11px] bg-yellow-400 text-[#0A417A] font-black px-4 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-all disabled:opacity-50" disabled={isSubmitting}>
-										{#if isSubmitting}
-											MEMPROSES...
-										{:else}
-											KONFIRMASI STOK
-										{/if}
-									</button>
-								</form>
+								<span class="text-[9px] text-gray-400 italic font-bold">Menunggu Persetujuan Anda...</span>
 							{:else if trx.status === 'COMPLETED'}
 								<div class="flex gap-2">
 									{#if trx.photo}

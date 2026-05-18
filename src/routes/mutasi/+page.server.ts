@@ -12,11 +12,26 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const allUlps = user.role === 'ADMIN_UP3' 
 		? await db.select().from(ulps).orderBy(asc(ulps.name)) 
 		: [];
-	const allMaterials = await db.select({
+	// Get pending initial stock materials for ULP to prevent double submission
+	let pendingInitMatIds: number[] = [];
+	if (user.role === 'ADMIN_ULP') {
+		const pendingInitStocks = await db.select({ materialId: transactionDetails.materialId })
+			.from(transactions)
+			.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
+			.where(and(
+				eq(transactions.targetUlpId, user.ulpId!),
+				eq(transactions.type, 'INITIAL_STOCK'),
+				eq(transactions.status, 'REQUESTED')
+			));
+		pendingInitMatIds = pendingInitStocks.map(p => p.materialId);
+	}
+
+	const rawMaterials = await db.select({
 		id: materials.id,
 		name: materials.name,
 		unit: materials.unit,
-		stock: sql<number>`COALESCE(${stocks.quantity}, 0)`
+		stock: sql<number>`COALESCE(${stocks.quantity}, 0)`,
+		stockId: stocks.id
 	})
 	.from(materials)
 	.leftJoin(stocks, and(
@@ -24,6 +39,14 @@ export const load: PageServerLoad = async ({ parent }) => {
 		user.role === 'ADMIN_UP3' ? isNull(stocks.ulpId) : eq(stocks.ulpId, user.ulpId!)
 	))
 	.orderBy(asc(materials.name));
+
+	const allMaterials = rawMaterials.map(m => ({
+		id: m.id,
+		name: m.name,
+		unit: m.unit,
+		stock: m.stock,
+		hasStockRecord: m.stockId !== null || pendingInitMatIds.includes(m.id)
+	}));
 
 	// Fetch History
 	const historyRows = await db.select({
@@ -450,10 +473,10 @@ export const actions: Actions = {
 		return { success: true, message: 'Mutasi Stok Multi-item Selesai!' };
 	},
 
-	// (ULP) Input Stok Awal
+	// (ULP & UP3) Input Stok Awal
 	stokAwal: async ({ request, locals }) => {
 		const user = locals.user;
-		if (user?.role !== 'ADMIN_ULP') return fail(403, { error: 'Hanya Admin ULP yang dapat input Stok Awal.' });
+		if (!user) return fail(403, { error: 'Akses ditolak.' });
 
 		const formData = await request.formData();
 		const materialIds = formData.getAll('materialId[]');
@@ -463,25 +486,64 @@ export const actions: Actions = {
 			return fail(400, { error: 'Pilih minimal 1 material!' });
 		}
 
-		const refNumber = `STOK-AWAL-${user.ulpId}-${Date.now()}`;
-		const [insertTrx] = await db.insert(transactions).values({
-			referenceNumber: refNumber,
-			type: 'INITIAL_STOCK',
-			status: 'REQUESTED',
-			createdBy: user.id,
-			targetUlpId: user.ulpId
-		});
-
-		for (let i = 0; i < materialIds.length; i++) {
-			await db.insert(transactionDetails).values({
-				transactionId: insertTrx.insertId,
-				materialId: parseInt(materialIds[i] as string),
-				quantity: parseInt(jumlahs[i] as string),
-				description: 'Input Stok Awal'
+		if (user.role === 'ADMIN_UP3') {
+			const refNumber = `STOK-AWAL-UP3-${Date.now()}`;
+			const [insertTrx] = await db.insert(transactions).values({
+				referenceNumber: refNumber,
+				type: 'INITIAL_STOCK',
+				status: 'COMPLETED',
+				createdBy: user.id,
+				targetUlpId: null,
+				approvedAt: new Date()
 			});
-		}
 
-		return { success: true, message: 'Stok Awal Berhasil Diajukan (Menunggu Konfirmasi UP3)!' };
+			for (let i = 0; i < materialIds.length; i++) {
+				const matId = parseInt(materialIds[i] as string);
+				const qty = parseInt(jumlahs[i] as string);
+
+				await db.insert(transactionDetails).values({
+					transactionId: insertTrx.insertId,
+					materialId: matId,
+					quantity: qty,
+					description: 'Input Stok Awal Pusat'
+				});
+
+				// Update or Insert Stok UP3
+				const [up3Stock] = await db.select().from(stocks).where(and(eq(stocks.materialId, matId), isNull(stocks.ulpId)));
+				if (up3Stock) {
+					await db.update(stocks)
+						.set({ quantity: qty })
+						.where(eq(stocks.id, up3Stock.id));
+				} else {
+					await db.insert(stocks).values({
+						materialId: matId,
+						ulpId: null,
+						quantity: qty
+					});
+				}
+			}
+			return { success: true, message: 'Stok Awal Pusat Berhasil Disimpan!' };
+		} else {
+			const refNumber = `STOK-AWAL-${user.ulpId}-${Date.now()}`;
+			const [insertTrx] = await db.insert(transactions).values({
+				referenceNumber: refNumber,
+				type: 'INITIAL_STOCK',
+				status: 'REQUESTED',
+				createdBy: user.id,
+				targetUlpId: user.ulpId
+			});
+
+			for (let i = 0; i < materialIds.length; i++) {
+				await db.insert(transactionDetails).values({
+					transactionId: insertTrx.insertId,
+					materialId: parseInt(materialIds[i] as string),
+					quantity: parseInt(jumlahs[i] as string),
+					description: 'Input Stok Awal ULP'
+				});
+			}
+
+			return { success: true, message: 'Stok Awal Berhasil Diajukan (Menunggu Konfirmasi UP3)!' };
+		}
 	},
 
 	// (UP3) Konfirmasi Stok Awal
@@ -525,6 +587,27 @@ export const actions: Actions = {
 			.where(eq(transactions.id, trx.id));
 
 		return { success: true, message: 'Stok Awal Berhasil Dikonfirmasi! Stok ULP telah diperbarui.' };
+	},
+
+	// (UP3) Tolak Stok Awal
+	tolakStokAwal: async ({ request, locals }) => {
+		const user = locals.user;
+		if (user?.role !== 'ADMIN_UP3') return fail(403, { error: 'Akses ditolak.' });
+
+		const formData = await request.formData();
+		const trxId = formData.get('transactionId') as string;
+		if (!trxId) return fail(400, { error: 'ID Transaksi tidak valid.' });
+
+		const [trx] = await db.select().from(transactions).where(eq(transactions.id, parseInt(trxId)));
+		if (!trx || trx.status !== 'REQUESTED' || trx.type !== 'INITIAL_STOCK') {
+			return fail(400, { error: 'Transaksi tidak valid.' });
+		}
+
+		await db.update(transactions)
+			.set({ status: 'REJECTED' })
+			.where(eq(transactions.id, trx.id));
+
+		return { success: true, message: 'Stok Awal ULP telah ditolak. ULP dapat mengajukan ulang.' };
 	}
 };
 
