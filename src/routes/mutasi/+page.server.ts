@@ -163,15 +163,44 @@ export const load: PageServerLoad = async ({ parent }) => {
 			id: transactions.id,
 			ref: transactions.referenceNumber,
 			ulpName: ulps.name,
+			targetUlpId: transactions.targetUlpId,
+			takerName: transactions.takerName,
 			date: transactions.createdAt,
 			type: transactions.type,
-			requestLetter: transactions.requestLetterBase64
+			requestLetter: transactions.requestLetterBase64,
+			materialId: transactionDetails.materialId,
+			quantity: transactionDetails.quantity,
+			description: transactionDetails.description
 		})
 		.from(transactions)
 		.innerJoin(ulps, eq(transactions.targetUlpId, ulps.id))
+		.leftJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
 		.where(eq(transactions.status, 'REQUESTED'));
 		
-		requestedTransactions = reqRows;
+		const reqMap = new Map();
+		reqRows.forEach(row => {
+			if (!reqMap.has(row.id)) {
+				reqMap.set(row.id, {
+					id: row.id,
+					ref: row.ref,
+					ulpName: row.ulpName,
+					targetUlpId: row.targetUlpId,
+					takerName: row.takerName,
+					date: row.date,
+					type: row.type,
+					requestLetter: row.requestLetter,
+					items: []
+				});
+			}
+			if (row.materialId) {
+				reqMap.get(row.id).items.push({
+					materialId: row.materialId.toString(),
+					jumlah: row.quantity,
+					keterangan: row.description || ''
+				});
+			}
+		});
+		requestedTransactions = Array.from(reqMap.values());
 	}
 
 	return {
@@ -187,24 +216,42 @@ export const load: PageServerLoad = async ({ parent }) => {
 };
 
 export const actions: Actions = {
-	// (ULP) Upload Surat Permintaan
+	// (ULP) Upload Surat Permintaan & Pilih Material
 	minta: async ({ request, locals }) => {
 		const user = locals.user;
 		if (user?.role !== 'ADMIN_ULP') return fail(403, { error: 'Hanya Admin ULP yang dapat membuat Permintaan.' });
 
 		const formData = await request.formData();
 		const letterBase64 = formData.get('letterBase64') as string;
-		if (!letterBase64) return fail(400, { error: 'Wajib mengunggah Surat Permintaan!' });
+		const takerName = formData.get('takerName') as string;
+		const materialIds = formData.getAll('materialId[]');
+		const jumlahs = formData.getAll('jumlah[]');
+		const keterangans = formData.getAll('keterangan[]');
+
+		if (!takerName) return fail(400, { error: 'Nama petugas pengambil harus diisi!' });
+		if (materialIds.length === 0) {
+			return fail(400, { error: 'Pilih minimal 1 material yang diajukan!' });
+		}
 
 		const refNumber = `REQ-${user.ulpId}-${Date.now()}`;
-		await db.insert(transactions).values({
+		const [insertTrx] = await db.insert(transactions).values({
 			referenceNumber: refNumber,
 			type: 'DISTRIBUTION',
 			status: 'REQUESTED',
 			createdBy: user.id,
 			targetUlpId: user.ulpId,
-			requestLetterBase64: letterBase64
+			takerName: takerName,
+			requestLetterBase64: letterBase64 || null
 		});
+
+		for (let i = 0; i < materialIds.length; i++) {
+			await db.insert(transactionDetails).values({
+				transactionId: insertTrx.insertId,
+				materialId: parseInt(materialIds[i] as string),
+				quantity: parseInt(jumlahs[i] as string),
+				description: keterangans[i] as string
+			});
+		}
 
 		return { success: true, message: 'Permintaan Material Berhasil Diajukan!' };
 	},
@@ -273,6 +320,22 @@ export const actions: Actions = {
 		}
 
 		return { success: true, message: 'Distribusi Material Berhasil Diproses (Menunggu Konfirmasi ULP)!' };
+	},
+
+	// (UP3) Tolak Permintaan ULP
+	tolakPermintaan: async ({ request, locals }) => {
+		const user = locals.user;
+		if (user?.role !== 'ADMIN_UP3') return fail(403, { error: 'Akses ditolak.' });
+
+		const formData = await request.formData();
+		const requestId = formData.get('requestId') as string;
+		if (!requestId) return fail(400, { error: 'Tidak ada permintaan yang dipilih.' });
+
+		await db.update(transactions)
+			.set({ status: 'REJECTED' })
+			.where(eq(transactions.id, parseInt(requestId)));
+
+		return { success: true, message: 'Permintaan Material dari ULP berhasil ditolak.' };
 	},
 
 	// (ULP) Verifikasi Penerimaan

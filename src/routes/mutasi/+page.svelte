@@ -138,15 +138,18 @@
 
 	// Selected Pending Verifikasi State (ULP)
 	let selectedVerifId = $state('');
-	let selectedVerifData = $derived((data.pendingVerifikasi || []).find((v: any) => v.id.toString() === selectedVerifId) || null);
+	let selectedVerifData = $derived((data.pendingVerifikasi || []).find((v: any) => v.id.toString() === selectedVerifId?.toString()) || null);
 
 	// Selected Draft Usage State (ULP)
 	let selectedUsageDraftId = $state('');
-	let selectedUsageDraftData = $derived((data.draftUsages || []).find((d: any) => d.id.toString() === selectedUsageDraftId) || null);
+	let selectedUsageDraftData = $derived((data.draftUsages || []).find((d: any) => d.id.toString() === selectedUsageDraftId?.toString()) || null);
 
 	// Selected Request State (UP3)
 	let selectedRequestId = $state('');
-	let selectedRequestData = $derived((data.requestedTransactions || []).find((r: any) => r.id.toString() === selectedRequestId) || null);
+	let selectedRequestData = $derived((data.requestedTransactions || []).find((r: any) => r.id.toString() === selectedRequestId?.toString()) || null);
+
+	// Taker Name State for UP3
+	let up3TakerName = $state('');
 
 	// History Filters
 	let historyFilter = $state('ALL'); // ALL | DISTRIBUTION | USAGE
@@ -155,6 +158,25 @@
 			? (data.history || []) 
 			: (data.history || []).filter((t: any) => t.type === historyFilter)
 	);
+
+	$effect(() => {
+		if (up3ActiveTab === 'DISTRIBUSI') {
+			if (selectedRequestId && selectedRequestData) {
+				if (selectedRequestData.items && selectedRequestData.items.length > 0) {
+					materialRows = selectedRequestData.items.map((item: any) => ({
+						materialId: item.materialId,
+						jumlah: item.jumlah,
+						keterangan: item.keterangan
+					}));
+				}
+				up3TakerName = selectedRequestData.takerName || '';
+			} else if (selectedRequestId === '') {
+				// Only reset if they select "Distribusi Langsung"
+				materialRows = [{ materialId: '', jumlah: '', keterangan: '' }];
+				up3TakerName = '';
+			}
+		}
+	});
 </script>
 
 <svelte:head>
@@ -223,7 +245,7 @@
 						<select id="requestId" name="requestId" bind:value={selectedRequestId} class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none focus:border-cyan-500 bg-gray-50 italic">
 							<option value="">-- Distribusi Langsung (Tanpa Permintaan) --</option>
 							{#each data.requestedTransactions.filter(r => r.type !== 'INITIAL_STOCK') as req}
-								<option value={req.id}>{req.ref} - {req.ulpName}</option>
+								<option value={req.id.toString()}>{req.ref} - {req.ulpName}</option>
 							{/each}
 						</select>
 					</div>
@@ -245,7 +267,7 @@
 						</div>
 						<div class="space-y-1.5">
 							<label for="takerName" class="block text-sm font-semibold text-[#0A417A]">Nama Pengambil</label>
-							<input type="text" id="takerName" name="takerName" placeholder="Contoh: Budi (ULP Kota)" required class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none focus:border-cyan-500">
+							<input type="text" id="takerName" name="takerName" bind:value={up3TakerName} placeholder="Contoh: Budi (ULP Kota)" required class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none focus:border-cyan-500">
 						</div>
 					</div>
 
@@ -318,16 +340,23 @@
 						</div>
 					</div>
 
-					<button type="submit" class="w-full bg-[#FFD500] hover:bg-[#FFAB00] text-[#0A417A] font-black text-lg py-4 rounded-xl shadow-lg mt-auto disabled:opacity-50" disabled={!fileBase64 || isSubmitting}>
-						{#if isSubmitting}
-							<div class="flex items-center justify-center">
-								<svg class="animate-spin h-6 w-6 mr-3 border-4 border-[#0A417A] border-t-transparent rounded-full" viewBox="0 0 24 24"></svg>
-								MEMPROSES...
-							</div>
-						{:else}
-							PROSES DISTRIBUSI
+					<div class="flex gap-4 mt-auto">
+						{#if selectedRequestId}
+							<button type="submit" formaction="?/tolakPermintaan" formnovalidate class="w-1/3 bg-red-500 hover:bg-red-600 text-white font-black text-sm py-4 rounded-xl shadow-lg disabled:opacity-50" disabled={isSubmitting}>
+								TOLAK PERMINTAAN
+							</button>
 						{/if}
-					</button>
+						<button type="submit" class="flex-1 bg-[#FFD500] hover:bg-[#FFAB00] text-[#0A417A] font-black text-lg py-4 rounded-xl shadow-lg disabled:opacity-50" disabled={!fileBase64 || isSubmitting}>
+							{#if isSubmitting}
+								<div class="flex items-center justify-center">
+									<svg class="animate-spin h-6 w-6 mr-3 border-4 border-[#0A417A] border-t-transparent rounded-full" viewBox="0 0 24 24"></svg>
+									MEMPROSES...
+								</div>
+							{:else}
+								PROSES DISTRIBUSI
+							{/if}
+						</button>
+					</div>
 				</form>
 
 				{:else if up3ActiveTab === 'STOK_AWAL'}
@@ -514,21 +543,108 @@
 
 				{#if ulpActiveTab === 'PERMINTAAN'}
 					<h2 class="text-xl font-bold text-[#0A417A] mb-8">Pengajuan Permintaan Material</h2>
-					<form method="POST" action="?/minta" use:enhance={handleEnhance} class="space-y-10 flex-1 flex flex-col">
-						<div class="bg-cyan-50 border border-dashed border-cyan-300 p-8 rounded-2xl text-center flex flex-col items-center justify-center min-h-[300px]">
-							<svg class="w-20 h-20 text-cyan-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-							<p class="text-sm font-bold text-cyan-800 mb-6 max-w-xs">Unggah Scan/Foto Surat Permintaan Resmi untuk reservasi stok di Gudang Pusat.</p>
-							<label class="cursor-pointer bg-white text-[#0A417A] px-6 py-3 rounded-xl font-black border-2 border-cyan-200 shadow-md inline-flex items-center hover:bg-cyan-100 transition-all">
-								<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4-4m4 4v12"></path></svg>
-								PILIH FILE SURAT
-								<input type="file" accept="image/*,application/pdf" class="hidden" onchange={(e) => handleFileChange(e, 'LETTER')} />
-							</label>
-							{#if requestLetterBase64}
-								<div class="mt-4 text-green-600 font-black italic">✓ Surat Permintaan Terpilih</div>
-							{/if}
-							<input type="hidden" name="letterBase64" value={requestLetterBase64}>
+					<form method="POST" action="?/minta" use:enhance={handleEnhance} class="space-y-6 flex-1 flex flex-col">
+						
+						<!-- Input Petugas -->
+						<div class="border border-gray-200 p-5 rounded-2xl bg-gray-50/50 shadow-inner">
+							<label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Nama Petugas Pengambil / Penanggung Jawab</label>
+							<input type="text" name="takerName" placeholder="Contoh: Budi (Akan ke Gudang UP3)" required class="w-full border-b-2 border-gray-200 py-2 text-sm font-black text-[#0A417A] outline-none bg-transparent focus:border-cyan-500 transition-colors">
 						</div>
-						<button type="submit" class="w-full bg-[#0188CE] hover:bg-blue-600 text-white font-black text-lg py-4 rounded-xl shadow-lg mt-auto disabled:opacity-50" disabled={!requestLetterBase64 || isSubmitting}>
+
+						<!-- Material List -->
+						<div class="border border-gray-200 p-5 rounded-2xl bg-gray-50/50 shadow-inner">
+							<div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-2">
+								<span class="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Rincian Material yang Diajukan</span>
+								<button type="button" onclick={addMaterialRow} class="text-[10px] font-black bg-[#FFD500] text-[#0A417A] px-3 py-1 rounded-lg shadow-sm hover:scale-105 transition-all border border-yellow-500">+ TAMBAH</button>
+							</div>
+							<div class="space-y-3">
+								{#each materialRows as row, i}
+									<div class="p-4 border border-gray-200 rounded-2xl bg-white relative shadow-md hover:shadow-lg transition-shadow">
+										<div class="flex justify-between items-start mb-3 border-b border-gray-50 pb-2">
+											<span class="text-[9px] font-black text-[#0A417A] bg-blue-50 px-2 py-0.5 rounded uppercase tracking-wider">Item #{i + 1}</span>
+											{#if materialRows.length > 1}
+												<button type="button" onclick={() => removeMaterialRow(i)} class="text-red-400 hover:text-red-600 transition-colors p-1">
+													<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+												</button>
+											{/if}
+										</div>
+
+										<div class="space-y-4">
+											<!-- Material Select -->
+											<div>
+												<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Pilih Material</label>
+												<select 
+													name="materialId[]" 
+													bind:value={row.materialId}
+													required 
+													class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] cursor-pointer focus:border-cyan-500 py-1 transition-colors"
+												>
+													<option value="">Pilih Material...</option>
+													{#each data.materials as mat}
+														<option value={mat.id.toString()}>
+															{mat.name} ({mat.unit})
+														</option>
+													{/each}
+												</select>
+											</div>
+
+											<div class="flex gap-4 items-start">
+												<!-- Quantity -->
+												<div class="w-24">
+													<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Jumlah</label>
+													<div class="flex items-center gap-1">
+														<input 
+															type="number" 
+															name="jumlah[]" 
+															placeholder="0" 
+															bind:value={row.jumlah}
+															required 
+															min="1"
+															class="w-full border-b-2 border-gray-100 rounded px-1 py-1 text-sm text-center font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors"
+														>
+														<span class="text-[10px] font-bold text-gray-400 truncate">{data.materials.find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
+													</div>
+												</div>
+
+												<!-- Keterangan -->
+												<div class="flex-1">
+													<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Keterangan (Opsional)</label>
+													<input 
+														type="text" 
+														name="keterangan[]" 
+														placeholder="Alasan permintaan..." 
+														class="w-full border-b-2 border-gray-100 py-1 text-sm text-gray-700 outline-none focus:border-cyan-500 transition-colors italic font-medium"
+													>
+												</div>
+											</div>
+										</div>
+									</div>
+								{/each}
+							</div>
+						</div>
+
+						<!-- Photo Upload Section -->
+						<div class="bg-cyan-50 border-2 border-dashed border-cyan-300 p-6 rounded-2xl flex flex-col items-center mt-6">
+							<p class="text-[10px] font-black text-cyan-800 uppercase mb-4 italic tracking-widest text-center">Lampirkan Surat Permintaan (Opsional)</p>
+							<div class="flex items-center gap-6">
+								<label class="cursor-pointer bg-white text-cyan-700 px-6 py-3 rounded-xl font-black border-2 border-cyan-300 shadow-md inline-flex items-center hover:bg-cyan-100 transition-all text-xs">
+									<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4-4m4 4v12"></path></svg>
+									PILIH FILE SURAT
+									<input type="file" accept="image/*,application/pdf" class="hidden" onchange={(e) => handleFileChange(e, 'LETTER')} />
+								</label>
+								{#if requestLetterBase64}
+									<div class="flex items-center text-green-600 font-black italic text-xs animate-bounce">
+										<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+										Surat Terlampir
+									</div>
+								{:else}
+									<div class="text-gray-400 font-bold italic text-xs">Belum ada file</div>
+								{/if}
+								<input type="hidden" name="letterBase64" value={requestLetterBase64}>
+							</div>
+						</div>
+
+						<button type="submit" class="w-full bg-[#0188CE] hover:bg-blue-600 text-white font-black text-lg py-4 rounded-xl shadow-lg mt-auto disabled:opacity-50" disabled={isSubmitting}>
 							{#if isSubmitting}
 								MEMPROSES...
 							{:else}
