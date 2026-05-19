@@ -208,16 +208,16 @@
 			{#if data.userRole === 'ADMIN_UP3'}
 				<div class="flex border-b border-gray-200 mb-6 bg-gray-50 p-1 rounded-t-lg">
 					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'DISTRIBUSI' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => up3ActiveTab = 'DISTRIBUSI'}>
-						1. DISTRIBUSI MATERIAL
+						DISTRIBUSI MATERIAL
 					</button>
 					{#if data.materials.filter(m => !m.hasStockRecord).length > 0 || up3ActiveTab === 'STOK_AWAL'}
 						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'STOK_AWAL' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => up3ActiveTab = 'STOK_AWAL'}>
-							2. INPUT STOK AWAL
+							INPUT STOK AWAL
 						</button>
 					{/if}
 					{#if (data.history || []).filter(t => t.status === 'REQUESTED' && t.type === 'INITIAL_STOCK').length > 0 || up3ActiveTab === 'KONFIRMASI_STOK'}
 						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'KONFIRMASI_STOK' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => up3ActiveTab = 'KONFIRMASI_STOK'}>
-							3. PERSETUJUAN STOK ULP
+							PERSETUJUAN STOK ULP
 							{#if (data.history || []).filter(t => t.status === 'REQUESTED' && t.type === 'INITIAL_STOCK').length > 0}
 								<span class="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full ml-1">
 									{(data.history || []).filter(t => t.status === 'REQUESTED' && t.type === 'INITIAL_STOCK').length}
@@ -526,17 +526,17 @@
 				<!-- TABS BAGI ULP -->
 				<div class="flex border-b border-gray-200 mb-6 bg-gray-50 p-1 rounded-t-lg">
 					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'PERMINTAAN' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => ulpActiveTab = 'PERMINTAAN'}>
-						1. PERMINTAAN
+						PERMINTAAN
 					</button>
 					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'VERIFIKASI' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => ulpActiveTab = 'VERIFIKASI'}>
-						2. TERIMA BARANG
+						TERIMA BARANG
 					</button>
 					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'PEMAKAIAN' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => ulpActiveTab = 'PEMAKAIAN'}>
-						3. PEMAKAIAN
+						PEMAKAIAN
 					</button>
 					{#if data.materials.filter(m => !m.hasStockRecord).length > 0 || ulpActiveTab === 'STOK_AWAL'}
 						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'STOK_AWAL' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => ulpActiveTab = 'STOK_AWAL'}>
-							4. STOK AWAL
+							STOK AWAL
 						</button>
 					{/if}
 				</div>

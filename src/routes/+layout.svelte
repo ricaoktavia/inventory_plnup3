@@ -60,8 +60,8 @@
 							<svg class="w-5 h-5 mr-3 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
 							Transaksi
 						</div>
-						{#if data.pendingRequestCount > 0}
-							<span class="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm animate-pulse">{data.pendingRequestCount}</span>
+						{#if data.actionCount > 0}
+							<span class="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm animate-pulse">{data.actionCount}</span>
 						{/if}
 					</a>
 					<a href="/materials" class="px-4 py-3 rounded-lg { $page.url.pathname.startsWith('/materials') ? 'bg-white/20 font-semibold shadow-inner border-l-4 border-yellow-400' : 'hover:bg-white/10 text-white/90' } transition-all flex items-center">

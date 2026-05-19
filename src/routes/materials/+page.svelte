@@ -98,7 +98,7 @@
 						<tr class="hover:bg-gray-50/80 transition-colors duration-150 text-xs">
 							<td class="px-4 py-4 text-center text-gray-400 font-medium sticky left-0 bg-white border-r border-gray-50">{material.id}</td>
 							<td class="px-4 py-4 sticky left-12 bg-white z-0 shadow-[2px_0_5px_rgba(0,0,0,0.02)] border-r border-gray-50">
-								<div class="font-bold text-[#0A417A] uppercase truncate max-w-[200px]">{material.name}</div>
+								<div class="font-bold text-[#0A417A] uppercase whitespace-normal break-words">{material.name}</div>
 							</td>
 							<td class="px-4 py-4 text-center font-medium text-gray-500">{material.unit}</td>
 

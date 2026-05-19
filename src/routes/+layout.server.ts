@@ -10,17 +10,27 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		throw redirect(302, '/login');
 	}
 
-	let pendingRequestCount = 0;
+	let actionCount = 0;
 	if (locals.user && locals.user.role === 'ADMIN_UP3') {
 		const result = await db
 			.select({ count: count() })
 			.from(transactions)
-			.where(and(eq(transactions.type, 'DISTRIBUTION'), eq(transactions.status, 'REQUESTED')));
-		pendingRequestCount = result[0].count;
+			.where(eq(transactions.status, 'REQUESTED'));
+		actionCount = result[0].count;
+	} else if (locals.user && locals.user.role === 'ADMIN_ULP') {
+		const result = await db
+			.select({ count: count() })
+			.from(transactions)
+			.where(and(
+				eq(transactions.type, 'DISTRIBUTION'),
+				eq(transactions.status, 'DRAFT'),
+				eq(transactions.targetUlpId, locals.user.ulpId!)
+			));
+		actionCount = result[0].count;
 	}
 
 	return {
 		user: locals.user,
-		pendingRequestCount
+		actionCount
 	};
 };

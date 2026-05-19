@@ -38,7 +38,7 @@
 					<div class="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
 						{#each data.criticalStocks as stock}
 							<div class="bg-white border border-red-200 p-2 rounded text-xs flex justify-between shadow-sm">
-								<span class="font-semibold text-gray-700 truncate mr-2" title={stock.name}>{stock.name}</span>
+								<span class="font-semibold text-gray-700 whitespace-normal break-words mr-2" title={stock.name}>{stock.name}</span>
 								<span class="font-bold text-red-600 shrink-0">{stock.quantity} {stock.unit}</span>
 							</div>
 						{/each}
@@ -93,9 +93,9 @@
 				{/each}
 			</div>
 			<!-- Labels -->
-			<div class="w-full flex justify-around text-[10px] text-gray-500 font-semibold mt-3 text-center">
+			<div class="w-full flex justify-around text-[10px] text-gray-500 font-semibold mt-3 text-center items-start">
 				{#each data.top5Materials as mat}
-					<span class="flex-1 truncate px-1" title={mat.name}>{mat.name}</span>
+					<span class="flex-1 whitespace-normal break-words px-1 leading-tight" title={mat.name}>{mat.name}</span>
 				{/each}
 			</div>
 		{/if}

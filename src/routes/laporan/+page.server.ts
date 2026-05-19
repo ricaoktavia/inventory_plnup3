@@ -59,8 +59,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				eq(transactions.status, 'COMPLETED')
 			));
 
-			masuk = trxPeriod?.incoming || 0;
-			keluar = trxPeriod?.outgoing || 0;
+			masuk = Number(trxPeriod?.incoming || 0);
+			keluar = Number(trxPeriod?.outgoing || 0);
 
 		} else {
 			// ULP Logic
@@ -96,19 +96,27 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				eq(transactions.targetUlpId, ulpId)
 			));
 
-			masuk = trxPeriod?.incoming || 0;
-			keluar = trxPeriod?.outgoing || 0;
+			masuk = Number(trxPeriod?.incoming || 0);
+			keluar = Number(trxPeriod?.outgoing || 0);
 		}
 
-		reportData.push({
-			id: mat.id,
-			name: mat.name,
-			unit: mat.unit,
-			awal,
-			masuk,
-			keluar,
-			akhir: awal + masuk - keluar
-		});
+		// Also make sure awal is parsed correctly, just in case
+		awal = Number(awal);
+
+		const akhir = awal + masuk - keluar;
+
+		// Only include materials that have some activity or balance
+		if (awal !== 0 || masuk !== 0 || keluar !== 0 || akhir !== 0) {
+			reportData.push({
+				id: mat.id,
+				name: mat.name,
+				unit: mat.unit,
+				awal,
+				masuk,
+				keluar,
+				akhir
+			});
+		}
 	}
 
 	return {

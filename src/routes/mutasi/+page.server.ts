@@ -587,16 +587,17 @@ export const actions: Actions = {
 			}
 			return { success: true, message: 'Stok Awal Pusat Berhasil Disimpan!' };
 		} else {
-			const refNumber = `STOK-AWAL-${user.ulpId}-${Date.now()}`;
-			const [insertTrx] = await db.insert(transactions).values({
-				referenceNumber: refNumber,
-				type: 'INITIAL_STOCK',
-				status: 'REQUESTED',
-				createdBy: user.id,
-				targetUlpId: user.ulpId
-			});
-
+			const timestamp = Date.now();
 			for (let i = 0; i < materialIds.length; i++) {
+				const refNumber = `STOK-AWAL-${user.ulpId}-${timestamp}-${i}`;
+				const [insertTrx] = await db.insert(transactions).values({
+					referenceNumber: refNumber,
+					type: 'INITIAL_STOCK',
+					status: 'REQUESTED',
+					createdBy: user.id,
+					targetUlpId: user.ulpId
+				});
+
 				await db.insert(transactionDetails).values({
 					transactionId: insertTrx.insertId,
 					materialId: parseInt(materialIds[i] as string),
