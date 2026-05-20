@@ -32,20 +32,23 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		if (selectedUlpId === 'up3') {
 			// UP3 Logic
 			const [trxBefore] = await db.select({
-				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' THEN ${transactionDetails.quantity} ELSE 0 END)`,
+				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' OR (${transactions.type} = 'INITIAL_STOCK' AND ${transactions.targetUlpId} IS NULL) THEN ${transactionDetails.quantity} ELSE 0 END)`,
 				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' THEN ${transactionDetails.quantity} ELSE 0 END)`
 			})
 			.from(transactions)
 			.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
 			.where(and(
 				eq(transactionDetails.materialId, mat.id),
-				lt(transactions.createdAt, start),
-				eq(transactions.status, 'COMPLETED')
+				eq(transactions.status, 'COMPLETED'),
+				or(
+					lt(transactions.createdAt, start),
+					eq(transactions.type, 'INITIAL_STOCK')
+				)
 			));
 
 			awal = (trxBefore?.incoming || 0) - (trxBefore?.outgoing || 0);
 
-			// 2. Masuk & Keluar in Period
+			// 2. Masuk & Keluar in Period (Exclude INITIAL_STOCK from masuk)
 			const [trxPeriod] = await db.select({
 				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' THEN ${transactionDetails.quantity} ELSE 0 END)`,
 				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' THEN ${transactionDetails.quantity} ELSE 0 END)`
@@ -67,21 +70,24 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			const ulpId = parseInt(selectedUlpId as string);
 			
 			const [trxBefore] = await db.select({
-				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' THEN ${transactionDetails.quantity} ELSE 0 END)`,
+				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} IN ('DISTRIBUTION', 'INITIAL_STOCK') THEN ${transactionDetails.quantity} ELSE 0 END)`,
 				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' THEN ${transactionDetails.quantity} ELSE 0 END)`
 			})
 			.from(transactions)
 			.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
 			.where(and(
 				eq(transactionDetails.materialId, mat.id),
-				lt(transactions.createdAt, start),
 				eq(transactions.status, 'COMPLETED'),
-				eq(transactions.targetUlpId, ulpId)
+				eq(transactions.targetUlpId, ulpId),
+				or(
+					lt(transactions.createdAt, start),
+					eq(transactions.type, 'INITIAL_STOCK')
+				)
 			));
 
 			awal = (trxBefore?.incoming || 0) - (trxBefore?.outgoing || 0);
 
-			// 2. Masuk & Keluar in Period
+			// 2. Masuk & Keluar in Period (Exclude INITIAL_STOCK from masuk)
 			const [trxPeriod] = await db.select({
 				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' THEN ${transactionDetails.quantity} ELSE 0 END)`,
 				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' THEN ${transactionDetails.quantity} ELSE 0 END)`
