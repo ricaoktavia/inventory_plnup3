@@ -582,7 +582,7 @@
 													<option value="">Pilih Material...</option>
 													{#each data.materials as mat}
 														<option value={mat.id.toString()}>
-															{mat.name} ({mat.unit})
+															{mat.name} ({mat.up3Stock} {mat.unit.toLowerCase()})
 														</option>
 													{/each}
 												</select>

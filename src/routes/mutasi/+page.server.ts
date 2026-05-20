@@ -40,11 +40,22 @@ export const load: PageServerLoad = async ({ parent }) => {
 	))
 	.orderBy(asc(materials.name));
 
+	// Fetch UP3 stocks separately to show available central stock to ULP during requests
+	const up3Stocks = await db.select({
+		materialId: stocks.materialId,
+		quantity: stocks.quantity
+	})
+	.from(stocks)
+	.where(isNull(stocks.ulpId));
+
+	const up3StockMap = new Map(up3Stocks.map(s => [s.materialId, s.quantity]));
+
 	const allMaterials = rawMaterials.map(m => ({
 		id: m.id,
 		name: m.name,
 		unit: m.unit,
 		stock: m.stock,
+		up3Stock: up3StockMap.get(m.id) || 0,
 		hasStockRecord: m.stockId !== null || pendingInitMatIds.includes(m.id)
 	}));
 
