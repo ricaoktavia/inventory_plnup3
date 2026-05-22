@@ -43,6 +43,7 @@ export const transactions = mysqlTable('transactions', {
 	approvedAt: datetime('approved_at'),
 	takerName: varchar('taker_name', { length: 255 }),
 	usagePurpose: varchar('usage_purpose', { length: 255 }),
+	firstParty: varchar('first_party', { length: 50 }),
 	
 	// Storing image and QR directly via Base64 in LONGTEXT 
 	requestLetterBase64: text('request_letter_base64'),

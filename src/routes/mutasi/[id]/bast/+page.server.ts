@@ -15,7 +15,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		qr: transactions.qrCodeBase64,
 		status: transactions.status,
 		targetUlp: ulps.name,
-		takerName: transactions.takerName
+		takerName: transactions.takerName,
+		firstParty: transactions.firstParty
 	})
 	.from(transactions)
 	.leftJoin(ulps, eq(transactions.targetUlpId, ulps.id))

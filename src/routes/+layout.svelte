@@ -78,6 +78,10 @@
 						<svg class="w-5 h-5 mr-3 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
 						Laporan
 					</a>
+					<a href="/export" class="px-4 py-3 rounded-lg { $page.url.pathname.startsWith('/export') ? 'bg-white/20 font-semibold shadow-inner border-l-4 border-yellow-400' : 'hover:bg-white/10 text-white/90' } transition-all flex items-center">
+						<svg class="w-5 h-5 mr-3 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+						Export Data
+					</a>
 				</nav>
 			</aside>
 
@@ -102,9 +106,6 @@
 
 					<div class="flex items-center text-sm font-medium relative z-10">
 						Selamat Datang, {data.user?.role === 'ADMIN_UP3' ? 'Admin UP3' : data.user?.ulpName}
-						{#if data.user?.role === 'ADMIN_UP3'}
-							<span class="ml-2 px-2 py-0.5 bg-yellow-400 text-[#0A417A] text-xs rounded-full font-bold shadow-sm">Pusat</span>
-						{/if}
 					</div>
 					
 					<div class="flex items-center gap-6 relative z-10">

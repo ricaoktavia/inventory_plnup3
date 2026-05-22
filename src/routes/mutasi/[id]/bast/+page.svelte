@@ -11,6 +11,21 @@
 	const tanggal = dateObj.getDate();
 	const bulan = new Intl.DateTimeFormat('id-ID', { month: 'long' }).format(dateObj).toUpperCase();
 	const tahun = dateObj.getFullYear();
+	function goBack() {
+		if (window.history.length > 1) {
+			window.history.back();
+		} else {
+			window.close();
+			// Fallback if browser blocks window.close()
+			setTimeout(() => {
+				if (document.referrer) {
+					window.location.href = document.referrer;
+				} else {
+					window.location.href = '/usage-tracker';
+				}
+			}, 150);
+		}
+	}
 </script>
 
 <svelte:head>
@@ -39,9 +54,9 @@
 			<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
 			Cetak ke PDF / Print
 		</button>
-		<a href="/mutasi" class="ml-4 text-cyan-700 font-bold py-2 px-6 rounded-lg border border-cyan-300 hover:bg-cyan-50 flex items-center">
+		<button onclick={goBack} class="ml-4 text-cyan-700 font-bold py-2 px-6 rounded-lg border border-cyan-300 hover:bg-cyan-50 flex items-center cursor-pointer">
 			Kembali
-		</a>
+		</button>
 	</div>
 
 <!-- KERTAS HALAMAN 1: BAST -->
@@ -77,7 +92,9 @@
 	<div class="pl-10 mb-4 leading-relaxed">
 		<table class="w-full">
 			<tbody>
-				<tr><td class="w-24">Nama</td><td class="w-4 text-center">:</td><td class="uppercase">NANANG DARYANTO</td></tr>
+				<tr><td class="w-24">Nama</td><td class="w-4 text-center">:</td><td class="uppercase">
+					{data.trx.firstParty || 'NANANG DARYANTO'}
+				</td></tr>
 				<tr><td>Jabatan</td><td class="text-center">:</td><td class="uppercase">OF KIN DAN ADM LAY GAN</td></tr>
 				<tr><td>Unit</td><td class="text-center">:</td><td class="uppercase">UP3 MADURA</td></tr>
 			</tbody>
@@ -146,14 +163,18 @@
 			
 			<div class="flex-1 flex justify-center items-center relative my-2">
 			{#if data.trx.qr}
-				<img src={data.trx.qr} alt="QR Validasi" class="w-24 h-24 object-contain mix-blend-multiply" />
-				<div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-				<img src="/logo-pln.png" class="w-20 h-20 object-contain transform -rotate-12 opacity-30 grayscale" alt="Logo PLN watermark" />
+				<div class="relative flex items-center justify-center">
+					<img src={data.trx.qr} alt="QR Tanda Tangan Digital" class="w-28 h-28 object-contain" />
+					<img src="/logo-pln.png" class="absolute w-8 h-8 object-contain opacity-20 pointer-events-none" alt="Logo PLN watermark" />
 				</div>
+			{:else}
+				<div class="w-28 h-28 border border-dashed border-gray-300 flex items-center justify-center text-[9px] text-gray-400">QR tidak tersedia</div>
 			{/if}
 			</div>
 
-			<p class="font-bold uppercase mt-auto">NANANG DARYANTO</p>
+			<p class="font-bold uppercase mt-auto">
+				{data.trx.firstParty || 'NANANG DARYANTO'}
+			</p>
 		</div>
 
 		<!-- TTD Pihak 2 -->

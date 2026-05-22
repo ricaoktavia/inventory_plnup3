@@ -10,24 +10,33 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const isUP3 = user.role === 'ADMIN_UP3';
 	const userLocationCondition = isUP3 ? isNull(stocks.ulpId) : eq(stocks.ulpId, user.ulpId!);
 
-	// 1. Critical Stocks Fetch (< 100)
-	const criticalStocks = await db.select({
-		id: materials.id,
-		name: materials.name,
-		quantity: stocks.quantity,
-		unit: materials.unit
+	// 1. Critical Stocks Count Check (Left join materials with stocks to include empty/uninitialized stocks)
+	const limitQuantity = isUP3 ? 100 : 10;
+	const criticalStocksQuery = await db.select({
+		quantity: stocks.quantity
 	})
-	.from(stocks)
-	.innerJoin(materials, eq(stocks.materialId, materials.id))
-	.where(and(userLocationCondition, sql`quantity < 100`))
-	.limit(5);
+	.from(materials)
+	.leftJoin(stocks, and(
+		eq(stocks.materialId, materials.id),
+		isUP3 ? isNull(stocks.ulpId) : eq(stocks.ulpId, user.ulpId!)
+	));
+
+	const criticalStocksCount = criticalStocksQuery.filter(
+		item => isUP3 
+			? (item.quantity === null || item.quantity < limitQuantity)
+			: (item.quantity !== null && item.quantity < limitQuantity)
+	).length;
 
 	// 2. Pending Actions (Drafts waiting for ULP)
 	let pendingDraftsCount = 0;
 	if (!isUP3) {
 		const pendingQ = await db.select({ count: sql`count(*)` })
 			.from(transactions)
-			.where(and(eq(transactions.targetUlpId, user.ulpId!), eq(transactions.status, 'DRAFT')));
+			.where(and(
+				eq(transactions.targetUlpId, user.ulpId!), 
+				eq(transactions.status, 'DRAFT'),
+				eq(transactions.type, 'DISTRIBUTION')
+			));
 		pendingDraftsCount = Number(pendingQ[0].count);
 	}
 
@@ -86,7 +95,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return {
 		role: user.role,
 		ulpName: user.ulpName,
-		criticalStocks,
+		criticalStocksCount,
+		limitQuantity,
 		pendingDraftsCount,
 		kpi: {
 			totalMaterials,

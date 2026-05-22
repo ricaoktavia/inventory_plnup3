@@ -57,7 +57,10 @@
 						</tr>
 						<tr class="border-b border-gray-100">
 							<td class="py-2 text-gray-500 font-medium">Pihak Pertama (Pengirim)</td>
-							<td class="py-2 font-bold text-gray-800">NANANG DARYANTO <span class="block text-[11px] font-normal text-gray-500">Of Kin Dan Adm Lay Gan - UP3 Madura</span></td>
+							<td class="py-2 font-bold text-gray-800 uppercase">
+								{data.trx.firstParty || 'NANANG DARYANTO'}
+								<span class="block text-[11px] font-normal text-gray-500">Of Kin Dan Adm Lay Gan - UP3 Madura</span>
+							</td>
 						</tr>
 						<tr>
 							<td class="py-2 text-gray-500 font-medium">Pihak Kedua (Penerima)</td>

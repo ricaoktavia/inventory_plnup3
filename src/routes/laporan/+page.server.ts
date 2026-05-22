@@ -8,7 +8,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	
 	const startDateStr = url.searchParams.get('startDate') || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
 	const endDateStr = url.searchParams.get('endDate') || new Date().toISOString().split('T')[0];
-	const selectedUlpId = url.searchParams.get('ulpId') || (user?.role === 'ADMIN_UP3' ? 'up3' : user?.ulpId?.toString());
+	const selectedUlpId = url.searchParams.get('ulpId') || (user?.role === 'ADMIN_UP3' ? 'up3' : user?.ulpId?.toString()) || 'up3';
 
 	const start = new Date(startDateStr);
 	const end = new Date(endDateStr);
@@ -125,8 +125,70 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		}
 	}
 
+	// Calculate monthly usage trends (for Jan-Dec of current year)
+	const year = 2026;
+	const conditions = [
+		eq(transactions.type, 'USAGE'),
+		eq(transactions.status, 'COMPLETED'),
+		sql`YEAR(${transactions.createdAt}) = ${year}`
+	];
+
+	if (selectedUlpId === 'up3') {
+		conditions.push(isNull(transactions.targetUlpId));
+	} else {
+		conditions.push(eq(transactions.targetUlpId, parseInt(selectedUlpId || '')));
+	}
+
+	const usageRows = await db.select({
+		materialId: transactionDetails.materialId,
+		month: sql<number>`MONTH(${transactions.createdAt})`,
+		totalQty: sql<number>`SUM(${transactionDetails.quantity})`
+	})
+	.from(transactions)
+	.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
+	.where(and(...conditions))
+	.groupBy(transactionDetails.materialId, sql`MONTH(${transactions.createdAt})`);
+
+	const monthlyUsageMap = new Map();
+	usageRows.forEach(row => {
+		const matId = row.materialId;
+		const month = Number(row.month);
+		const qty = Number(row.totalQty || 0);
+		if (!monthlyUsageMap.has(matId)) {
+			monthlyUsageMap.set(matId, {});
+		}
+		monthlyUsageMap.get(matId)[month] = qty;
+	});
+
+	const monthlyUsageData = [];
+	for (const mat of allMaterials) {
+		const monthsObj = monthlyUsageMap.get(mat.id) || {};
+		let total = 0;
+		const monthlyValues = [];
+		for (let m = 1; m <= 12; m++) {
+			const val = monthsObj[m] || 0;
+			monthlyValues.push(val);
+			total += val;
+		}
+		
+		const avg = Number((total / 12).toFixed(2));
+		
+		if (total > 0) {
+			monthlyUsageData.push({
+				id: mat.id,
+				name: mat.name,
+				unit: mat.unit,
+				months: monthlyValues,
+				total,
+				avg
+			});
+		}
+	}
+
 	return {
 		reportData,
+		monthlyUsageData,
+		currentYear: year,
 		allUlps,
 		startDate: startDateStr,
 		endDate: endDateStr,

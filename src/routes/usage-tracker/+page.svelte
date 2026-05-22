@@ -5,19 +5,47 @@
 	// Filters
 	let searchQuery = $state('');
 	let selectedUlpFilter = $state('ALL');
+	let typeFilter = $state('ALL'); // ALL | DISTRIBUTION | USAGE | INITIAL_STOCK
 
-	let filteredUsage = $derived(
+	let filteredHistory = $derived(
 		(data.usageHistory || []).filter((item: any) => {
 			const matchesSearch = item.ulpName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
 				item.purpose?.toLowerCase().includes(searchQuery.toLowerCase()) ||
 				item.referenceNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				item.takerName?.toLowerCase().includes(searchQuery.toLowerCase());
+				item.takerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				(item.items || []).some((i: any) => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
 			
 			const matchesUlp = selectedUlpFilter === 'ALL' || item.ulpName === selectedUlpFilter;
 			
-			return matchesSearch && matchesUlp;
+			let matchesType = false;
+			if (typeFilter === 'ALL') {
+				matchesType = true;
+			} else if (typeFilter === 'USAGE_UP3') {
+				matchesType = item.type === 'USAGE' && (!item.targetUlpId || item.ulpName === 'Pusat UP3');
+			} else if (typeFilter === 'USAGE_ULP') {
+				matchesType = item.type === 'USAGE' && item.targetUlpId && item.ulpName !== 'Pusat UP3';
+			} else {
+				matchesType = item.type === typeFilter;
+			}
+			
+			return matchesSearch && matchesUlp && matchesType;
 		})
 	);
+
+	// Lightbox Viewer Modal State
+	let viewerBase64 = $state(''); // Data URL of file to view
+	let showViewer = $state(false);
+
+	function openViewer(dataUrl: string) {
+		if (!dataUrl) return;
+		viewerBase64 = dataUrl;
+		showViewer = true;
+	}
+
+	function closeViewer() {
+		showViewer = false;
+		viewerBase64 = '';
+	}
 
 	// Finalization State
 	let finalizingId = $state<number | null>(null);
@@ -58,10 +86,26 @@
 			photoBase64 = await compressImage(file);
 		}
 	}
+
+	function handleEnhance() {
+		isSubmitting = true;
+		const startTime = Date.now();
+		return async ({ result, update }: { result: any, update: any }) => {
+			const elapsed = Date.now() - startTime;
+			const remaining = Math.max(0, 2000 - elapsed);
+			if (remaining > 0) await new Promise(r => setTimeout(r, remaining));
+			isSubmitting = false;
+			if (result.type === 'success') {
+				finalizingId = null;
+				photoBase64 = '';
+			}
+			await update();
+		};
+	}
 </script>
 
 <svelte:head>
-	<title>Usage Tracker - Monitoring Lapangan ULP</title>
+	<title>Usage Tracker - Monitoring & Histori</title>
 </svelte:head>
 
 <!-- Notifications -->
@@ -71,171 +115,272 @@
 	</div>
 {/if}
 {#if form?.error}
-	<div class="fixed top-20 right-10 z-[100] bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl">
+	<div class="fixed top-20 right-10 z-[100] bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl animate-pulse">
 		⚠️ {form.error}
 	</div>
 {/if}
 
-<div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-	<div class="flex flex-col">
-		<h1 class="text-3xl font-bold text-[#0A417A] tracking-tight">Usage Tracker</h1>
-		<p class="text-gray-500 mt-1.5 flex items-center gap-2">
-			<span class="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse"></span>
-			Monitoring real-time pemakaian material {data.userRole === 'ADMIN_UP3' ? 'semua unit ULP' : 'unit anda'}
-		</p>
-	</div>
-
-	<div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+<!-- Header -->
+<div class="mb-8 flex flex-col gap-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-[1200px] mx-auto">
+	<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+		<div>
+			<h1 class="text-xl font-bold text-[#0A417A] tracking-tight">Usage & Mutation Tracker</h1>
+			<p class="text-gray-500 mt-1.5 flex items-center gap-2">
+				<span class="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse"></span>
+				Monitoring real-time transaksi, mutasi, & pemakaian lapangan {data.userRole === 'ADMIN_UP3' ? 'semua unit ULP' : 'unit anda'}
+			</p>
+		</div>
 		{#if data.userRole === 'ADMIN_ULP'}
-			<a href="/mutasi?tab=PEMAKAIAN" class="w-full md:w-auto bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-700 hover:to-blue-800 text-white font-black text-sm py-3.5 px-8 rounded-xl shadow-lg shadow-cyan-100 transition-all flex items-center justify-center gap-2 group transform active:scale-95">
-				<svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+			<a href="/mutasi?tab=PEMAKAIAN" class="w-full md:w-auto bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-700 hover:to-blue-800 text-white font-black text-sm py-3 px-6 rounded-xl shadow-lg shadow-cyan-100 transition-all flex items-center justify-center gap-2 group transform active:scale-95">
+				<svg class="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
 				TAMBAH PEMAKAIAN
 			</a>
 		{/if}
-		
-		<div class="flex flex-col md:flex-row items-end gap-3 w-full md:w-auto">
-			{#if data.userRole === 'ADMIN_UP3'}
-				<!-- Filter ULP (Only for UP3) -->
-				<div class="flex flex-col w-full md:w-48">
-					<label for="ulpFilter" class="text-[10px] text-gray-400 mb-1 font-black uppercase tracking-widest pl-1">Unit ULP:</label>
-					<select 
-						id="ulpFilter"
-						bind:value={selectedUlpFilter}
-						class="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none bg-gray-50 cursor-pointer hover:bg-gray-100 transition-all shadow-sm font-bold text-[#0A417A]"
-					>
-						<option value="ALL">Semua ULP</option>
-						{#each data.ulps as ulp}
-							<option value={ulp.name}>{ulp.name}</option>
-						{/each}
-					</select>
-				</div>
-			{/if}
+	</div>
 
-			<!-- Search Box -->
-			<div class="w-full md:w-80 relative">
-				<label class="text-[10px] text-gray-400 mb-1 font-black uppercase tracking-widest pl-1">Cari Data:</label>
-				<div class="relative">
-					<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-						<svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-					</div>
-					<input 
-						type="text" 
-						bind:value={searchQuery}
-						placeholder="Cari SPK, Petugas, Material..." 
-						class="block w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-cyan-500 shadow-sm transition-all font-medium"
-					/>
-				</div>
+	<!-- Search Box -->
+	<div class="mb-4">
+		<label class="text-[10px] text-gray-400 mb-1.5 font-black uppercase tracking-widest pl-1 block">Cari Data:</label>
+		<div class="relative">
+			<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+				<svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+			</div>
+			<input 
+				type="text" 
+				bind:value={searchQuery}
+				placeholder="Cari SPK, Petugas, Material..." 
+				class="block w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-cyan-500 shadow-sm transition-all font-medium"
+			/>
+		</div>
+	</div>
+
+	<!-- Blue Gradient Filter Bar (One Row for Unit ULP and Tipe Transaksi) -->
+	<div class="bg-gradient-to-r from-[#0188CE] via-[#0092D1] to-[#0D5BB4] p-4 rounded-xl shadow-md text-white flex flex-col md:flex-row gap-4 items-end mb-2">
+		<!-- Type Filter Tabs -->
+		<div class="flex-1 w-full">
+			<label class="text-[10px] text-white/90 mb-1.5 font-black uppercase tracking-widest pl-1 block">Tipe Transaksi:</label>
+			<div class="flex bg-white/10 p-0.5 rounded-xl border border-white/20">
+				<button class="flex-1 py-2 text-[8.5px] font-black rounded-lg transition-all {typeFilter === 'ALL' ? 'bg-white text-[#0A417A] shadow-sm' : 'text-white hover:bg-white/10'}" onclick={() => typeFilter = 'ALL'}>
+					SEMUA
+				</button>
+				<button class="flex-1 py-2 text-[8.5px] font-black rounded-lg transition-all {typeFilter === 'DISTRIBUTION' ? 'bg-white text-blue-600 shadow-sm' : 'text-white hover:bg-white/10'}" onclick={() => typeFilter = 'DISTRIBUTION'}>
+					TRANSFER MATERIAL
+				</button>
+				{#if data.userRole === 'ADMIN_UP3'}
+					<button class="flex-1 py-2 text-[8.5px] font-black rounded-lg transition-all {typeFilter === 'USAGE_UP3' ? 'bg-white text-orange-600 shadow-sm' : 'text-white hover:bg-white/10'}" onclick={() => typeFilter = 'USAGE_UP3'}>
+						PEMAKAIAN UP3
+					</button>
+					<button class="flex-1 py-2 text-[8.5px] font-black rounded-lg transition-all {typeFilter === 'USAGE_ULP' ? 'bg-white text-orange-600 shadow-sm' : 'text-white hover:bg-white/10'}" onclick={() => typeFilter = 'USAGE_ULP'}>
+						PEMAKAIAN ULP
+					</button>
+				{:else}
+					<button class="flex-1 py-2 text-[8.5px] font-black rounded-lg transition-all {typeFilter === 'USAGE' ? 'bg-white text-orange-600 shadow-sm' : 'text-white hover:bg-white/10'}" onclick={() => typeFilter = 'USAGE'}>
+						PEMAKAIAN
+					</button>
+				{/if}
+				<button class="flex-1 py-2 text-[8.5px] font-black rounded-lg transition-all {typeFilter === 'INITIAL_STOCK' ? 'bg-white text-purple-600 shadow-sm' : 'text-white hover:bg-white/10'}" onclick={() => typeFilter = 'INITIAL_STOCK'}>
+					STOK AWAL
+				</button>
 			</div>
 		</div>
+
+		<!-- ULP Filter -->
+		{#if data.userRole === 'ADMIN_UP3'}
+			<div class="flex-1 w-full">
+				<label for="ulpFilter" class="text-[10px] text-white/90 mb-1.5 font-black uppercase tracking-widest pl-1 block">Unit ULP:</label>
+				<select 
+					id="ulpFilter"
+					bind:value={selectedUlpFilter}
+					class="w-full border-none rounded-xl px-4 py-2 text-xs focus:ring-2 focus:ring-cyan-300 outline-none bg-white/20 text-white cursor-pointer hover:bg-white/30 transition-all shadow-inner font-bold"
+				>
+					<option value="ALL" class="text-gray-800">Semua ULP</option>
+					<option value="Pusat UP3" class="text-gray-800">Pusat UP3</option>
+					{#each data.ulps as ulp}
+						<option value={ulp.name} class="text-gray-800">{ulp.name}</option>
+					{/each}
+				</select>
+			</div>
+		{/if}
 	</div>
 </div>
 
-<div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden flex flex-col">
-	<div class="overflow-x-auto">
-		<table class="w-full text-left border-collapse">
-			<thead>
-				<tr class="bg-gray-50 text-gray-600 text-sm border-b border-gray-200 uppercase tracking-wider">
-					<th class="px-6 py-4 font-semibold w-16 text-center italic">#</th>
-					<th class="px-6 py-4 font-semibold w-40">Waktu & Ref</th>
-					<th class="px-6 py-4 font-semibold w-32">Unit ULP</th>
-					<th class="px-6 py-4 font-semibold">Tujuan / SPK</th>
-					<th class="px-6 py-4 font-semibold w-40 text-center">Status</th>
-					<th class="px-6 py-4 font-semibold w-48">Petugas</th>
-					<th class="px-6 py-4 font-semibold">Rincian Material</th>
-				</tr>
-			</thead>
-			<tbody class="divide-y divide-gray-100">
-				{#if filteredUsage.length === 0}
-					<tr>
-						<td colspan="7" class="px-6 py-10 text-center text-gray-500 bg-gray-50/50 uppercase font-black text-xs tracking-widest italic animate-pulse">Belum ada aktivitas pemakaian yang tercatat.</td>
-					</tr>
-				{:else}
-					{#each filteredUsage as log, i}
-					<tr class="hover:bg-gray-50/80 transition-colors duration-150 text-sm {log.status === 'DRAFT' ? 'bg-orange-50/20' : ''}">
-						<td class="px-6 py-4 text-center text-gray-400 font-medium italic">{i + 1}</td>
-						<td class="px-6 py-4">
-							<div class="font-bold text-[#0A417A] text-base">{new Date(log.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-							<div class="text-[10px] text-gray-400 font-black tracking-widest uppercase mt-0.5">{log.referenceNumber}</div>
-						</td>
-						<td class="px-6 py-4 text-gray-700 font-medium">{log.ulpName}</td>
-						<td class="px-6 py-4">
-							<div class="font-medium text-gray-700 leading-snug line-clamp-2 max-w-[200px]">{log.purpose}</div>
-						</td>
-						<td class="px-6 py-4 text-center">
-							{#if log.status === 'DRAFT'}
-								<div class="flex flex-col items-center gap-2">
-									<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black bg-orange-100 text-orange-700 border border-orange-200">
-										<span class="w-1.5 h-1.5 rounded-full bg-orange-500 mr-1.5 animate-pulse"></span>
-										DRAFT
-									</div>
-									
-									{#if data.userRole === 'ADMIN_ULP'}
-										{#if finalizingId === log.id}
-											<form method="POST" action="?/finalisasiDraft" use:enhance={() => {
-												isSubmitting = true;
-												return async ({ update }) => { isSubmitting = false; finalizingId = null; photoBase64 = ''; update(); };
-											}} class="flex flex-col gap-2 p-2 border rounded-lg bg-white shadow-lg animate-in fade-in zoom-in duration-200">
-												<input type="hidden" name="transactionId" value={log.id} />
-												<input type="hidden" name="photoBase64" value={photoBase64} />
-												<label class="cursor-pointer bg-cyan-50 text-cyan-700 px-3 py-1.5 rounded text-[10px] font-black border border-cyan-200 text-center">
-													{photoBase64 ? '✓ GANTI FOTO' : '📷 AMBIL FOTO'}
-													<input type="file" accept="image/*" capture="environment" class="hidden" onchange={handlePhotoUpload} />
-												</label>
-												{#if photoBase64}
-													<button type="submit" class="bg-green-500 text-white px-3 py-1.5 rounded text-[10px] font-black shadow-sm disabled:opacity-50" disabled={isSubmitting}>
-														{isSubmitting ? '...' : 'SELESAIKAN'}
-													</button>
-												{/if}
-												<button type="button" onclick={() => { finalizingId = null; photoBase64 = ''; }} class="text-[9px] text-gray-400 font-bold">BATAL</button>
-											</form>
-										{:else}
-											<button onclick={() => finalizingId = log.id} class="text-[10px] font-black text-cyan-600 hover:underline">Selesaikan Sekarang →</button>
-										{/if}
-									{/if}
-								</div>
-							{:else}
-								<div class="inline-flex flex-col items-center">
-									<div class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-green-100 text-green-700 border border-green-200 mb-1">
-										VALID
-									</div>
-									{#if log.photo}
-										<div class="group relative">
-											<svg class="w-4 h-4 text-cyan-600 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-											<div class="absolute bottom-full left-1/2 -translate-x-1/2 hidden group-hover:block z-50 bg-white border p-1 rounded shadow-xl mb-2">
-												<img src={log.photo} class="max-w-[150px] h-auto rounded" alt="Bukti Pemasangan"/>
-											</div>
-										</div>
-									{/if}
-								</div>
+<!-- History Cards Layout -->
+<div class="max-w-[1200px] mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-6 px-1">
+	{#if filteredHistory.length === 0}
+		<div class="md:col-span-2 bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-500 font-bold italic shadow-sm uppercase tracking-wider">
+			Belum ada data riwayat transaksi yang cocok.
+		</div>
+	{:else}
+		{#each filteredHistory as trx}
+			<div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm relative transition-all hover:shadow-md flex flex-col justify-between {trx.status === 'COMPLETED' ? '' : 'bg-gray-50/50 border-dashed'}">
+				<div>
+					<!-- Floating Status Badge -->
+					<div class="absolute top-6 right-6 flex gap-2">
+						{#if trx.requestLetter}
+							<span class="bg-cyan-100 text-[#0188CE] text-[8px] font-black px-2 py-0.5 rounded border border-cyan-200">LETTER</span>
+						{/if}
+						{#if trx.status === 'REQUESTED'}
+							<span class="bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm">NEW REQ</span>
+						{:else if trx.status === 'DRAFT'}
+							<span class="bg-yellow-400 text-[#0A417A] text-[8px] font-black px-2 py-0.5 rounded shadow-sm">DRAFT</span>
+						{:else if trx.status === 'APPROVED_ULP'}
+							<span class="bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm">CONFIRMED</span>
+						{:else if trx.status === 'COMPLETED'}
+							<span class="bg-green-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm italic">SUCCESS</span>
+						{:else if trx.status === 'REJECTED'}
+							<span class="bg-gray-800 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm">REJECTED</span>
+						{/if}
+					</div>
+
+					<div class="flex items-center space-x-2 text-[10px] text-gray-400 font-black mb-4 italic">
+						<span>{new Date(trx.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+						<span>•</span>
+						<span class="text-[#0A417A] bg-gray-100 px-2 py-0.5 rounded">{trx.referenceNumber}</span>
+					</div>
+
+					<div class="mb-4">
+						<p class="text-base font-black text-gray-800 leading-tight">
+							{#if trx.type === 'USAGE'}
+								SPK: {trx.purpose}
+							{:else if trx.type === 'DISTRIBUTION'}
+								Penerima: {trx.ulpName}
+							{:else if trx.type === 'INITIAL_STOCK'}
+								Stok Awal: {trx.ulpName}
 							{/if}
-						</td>
-								<td class="px-6 py-4">
-									<div class="flex items-center">
-										<div class="w-7 h-7 rounded-full bg-cyan-50 flex items-center justify-center mr-2 shrink-0 text-[#0A417A] border border-cyan-100">
-											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-										</div>
-										<span class="text-gray-700 font-medium truncate">{log.takerName}</span>
-									</div>
-								</td>
-								<td class="px-6 py-4">
-									<div class="space-y-1">
-										{#each log.items as item}
-											<div class="flex items-center justify-between gap-4 border-b border-gray-50 last:border-0 pb-1 last:pb-0">
-												<span class="text-gray-600 truncate max-w-[120px]">
-													{item.name}
-												</span>
-												<span class="font-bold text-gray-800 whitespace-nowrap">{item.quantity} <span class="text-[9px] font-normal text-gray-500">{item.unit}</span></span>
-											</div>
-										{/each}
-									</div>
-								</td>
-							</tr>
+						</p>
+						<p class="text-xs text-gray-500 mt-2">
+							Pengambil/Petugas: <span class="font-bold text-gray-700">{trx.takerName || '---'}</span>
+						</p>
+						{#if trx.firstParty}
+							<p class="text-xs text-gray-500 mt-1">
+								Pihak Pertama: <span class="font-bold text-[#0A417A] uppercase">{trx.firstParty}</span>
+							</p>
+						{/if}
+					</div>
+
+					<!-- Material List Table/Card section -->
+					<div class="space-y-1.5 bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
+						<div class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Daftar Material:</div>
+						{#each trx.items as item}
+							<div class="flex justify-between items-center text-xs font-bold text-gray-600">
+								<span class="truncate max-w-[200px]">{item.name}</span>
+								<span class="text-gray-900 whitespace-nowrap">{item.quantity} <span class="text-[9px] font-normal text-gray-400">{item.unit}</span></span>
+							</div>
 						{/each}
+					</div>
+				</div>
+
+				<!-- Actions Block -->
+				<div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-4">
+					<div class="flex items-center gap-2">
+						<!-- Finalize transfer (UP3 only) -->
+						{#if trx.status === 'APPROVED_ULP' && data.userRole === 'ADMIN_UP3'}
+							<form method="POST" action="?/finalisasi" use:enhance={handleEnhance}>
+								<input type="hidden" name="transactionId" value={trx.id} />
+								<button type="submit" class="text-xs bg-green-500 hover:bg-green-600 text-white font-black px-4 py-2 rounded-xl shadow-md transition-all disabled:opacity-50" disabled={isSubmitting}>
+									{#if isSubmitting} MEMPROSES... {:else} FINALIZE MUTASI {/if}
+								</button>
+							</form>
+						{:else if trx.status === 'REQUESTED' && trx.type === 'INITIAL_STOCK' && data.userRole === 'ADMIN_UP3'}
+							<div class="flex gap-2">
+								<form method="POST" action="?/konfirmasiStokAwal" use:enhance={handleEnhance}>
+									<input type="hidden" name="transactionId" value={trx.id} />
+									<button type="submit" class="text-xs bg-green-500 hover:bg-green-600 text-white font-black px-3 py-1.5 rounded-lg shadow-sm transition-all disabled:opacity-50" disabled={isSubmitting}>
+										SETUJU
+									</button>
+								</form>
+								<form method="POST" action="?/tolakStokAwal" use:enhance={handleEnhance}>
+									<input type="hidden" name="transactionId" value={trx.id} />
+									<button type="submit" class="text-xs bg-red-500 hover:bg-red-600 text-white font-black px-3 py-1.5 rounded-lg shadow-sm transition-all disabled:opacity-50" disabled={isSubmitting}>
+										TOLAK
+									</button>
+								</form>
+							</div>
+						{:else if trx.status === 'DRAFT' && trx.type === 'USAGE'}
+							<!-- Inline finalization form with image capture -->
+							{#if finalizingId === trx.id}
+								<form method="POST" action="?/finalisasiPemakaian" use:enhance={handleEnhance} class="w-full flex flex-col gap-2">
+									<input type="hidden" name="transactionId" value={trx.id} />
+									<input type="hidden" name="photoBase64" value={photoBase64} />
+									<div class="flex items-center gap-2">
+										<label class="cursor-pointer bg-cyan-50 text-[#0092D1] hover:bg-cyan-100 border border-cyan-200 px-3 py-2 rounded-lg font-black text-[10px] inline-flex items-center transition-all">
+											📷 {photoBase64 ? 'GANTI FOTO' : 'AMBIL FOTO'}
+											<input type="file" accept="image/*" capture="environment" class="hidden" onchange={handlePhotoUpload} />
+										</label>
+										{#if photoBase64}
+											<span class="text-[9px] text-green-600 font-bold bg-green-50 border border-green-200 px-1.5 py-0.5 rounded">✓ Foto Siap</span>
+										{/if}
+										<button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-black text-[10px] px-3 py-2 rounded-lg shadow-sm disabled:opacity-50" disabled={isSubmitting || (trx.targetUlpId !== null && !photoBase64)}>
+											{isSubmitting ? '...' : 'SELESAIKAN'}
+										</button>
+										<button type="button" onclick={() => { finalizingId = null; photoBase64 = ''; }} class="text-[10px] text-gray-400 hover:text-gray-600 font-bold ml-auto">BATAL</button>
+									</div>
+									{#if trx.targetUlpId !== null}
+										<span class="text-[9px] text-red-500 font-semibold">*Foto bukti (eviden) wajib diunggah untuk pemakaian ULP.</span>
+									{:else}
+										<span class="text-[9px] text-gray-400 font-medium">*Foto bukti bersifat opsional untuk pemakaian UP3.</span>
+									{/if}
+								</form>
+							{:else}
+								<button onclick={() => finalizingId = trx.id} class="text-xs font-black text-cyan-600 hover:underline">Selesaikan Sekarang →</button>
+							{/if}
+						{:else if trx.status === 'REQUESTED' && trx.type === 'INITIAL_STOCK' && data.userRole === 'ADMIN_ULP'}
+							<span class="text-[10px] text-gray-400 font-black italic">Menunggu Persetujuan UP3...</span>
+						{:else if trx.status === 'COMPLETED'}
+							<!-- Completed files viewing options -->
+							<div class="flex items-center gap-3">
+								{#if trx.photo}
+									<button type="button" onclick={() => openViewer(trx.photo)} class="text-xs font-bold text-gray-500 flex items-center hover:text-gray-700 underline decoration-dotted">
+										📦 Foto Bukti (Evident)
+									</button>
+								{/if}
+								{#if trx.type === 'DISTRIBUTION'}
+									<a href="/mutasi/{trx.id}/bast" target="_blank" class="text-[10px] bg-gray-100 hover:bg-gray-200 text-[#0A417A] font-black px-3 py-1.5 rounded-lg border shadow-sm transition-all italic">LIAT BAST</a>
+								{/if}
+							</div>
+						{:else}
+							<span class="text-[10px] text-gray-400 font-bold italic">Menunggu proses...</span>
+						{/if}
+					</div>
+
+					<!-- Request Letter display button if present -->
+					{#if trx.requestLetter}
+						<button type="button" onclick={() => openViewer(trx.requestLetter)} class="text-[10px] font-bold text-cyan-600 flex items-center hover:text-cyan-700 bg-cyan-50 px-2 py-1 rounded border border-cyan-100 shrink-0">
+							📄 Surat
+						</button>
 					{/if}
-				</tbody>
-			</table>
+				</div>
+			</div>
+		{/each}
+	{/if}
+</div>
+
+<!-- Lightbox Viewer Modal -->
+{#if showViewer}
+	<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 md:p-10 backdrop-blur-sm" role="dialog" aria-modal="true" onclick={closeViewer}>
+		<button class="absolute top-6 right-6 text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all" onclick={closeViewer}>
+			<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+		</button>
+		
+		<div class="max-w-5xl w-full h-full flex flex-col items-center justify-center" onclick={(e) => e.stopPropagation()}>
+			{#if viewerBase64.startsWith('data:application/pdf')}
+				<iframe src={viewerBase64} class="w-full h-full rounded-xl shadow-2xl bg-white" title="Document Viewer"></iframe>
+			{:else}
+				<img src={viewerBase64} class="max-w-full max-h-full object-contain rounded-xl shadow-2xl" alt="Document Preview"/>
+			{/if}
+			
+			<div class="mt-4 flex gap-4">
+				<a href={viewerBase64} download="dokumen-pln.jpg" class="bg-[#FFD500] text-[#0A417A] px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:scale-105 transition-all flex items-center">
+					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4 4m4-4H8"></path></svg>
+					DOWNLOAD FILE
+				</a>
+				<button class="bg-white/10 text-white px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:bg-white/20 transition-all" onclick={closeViewer}>
+					TUTUP
+				</button>
+			</div>
 		</div>
 	</div>
+{/if}
 
 <style>
 	/* Custom scrollbar for better look */

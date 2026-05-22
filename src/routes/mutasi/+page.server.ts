@@ -59,115 +59,39 @@ export const load: PageServerLoad = async ({ parent }) => {
 		hasStockRecord: m.stockId !== null || pendingInitMatIds.includes(m.id)
 	}));
 
-	// Fetch History
-	const historyRows = await db.select({
-		id: transactions.id,
-		referenceNumber: transactions.referenceNumber,
-		date: transactions.createdAt,
-		targetUlpId: transactions.targetUlpId,
-		targetUlp: ulps.name,
-		status: transactions.status,
-		type: transactions.type,
-		takerName: transactions.takerName,
-		usagePurpose: transactions.usagePurpose,
-		materialName: materials.name,
-		quantity: transactionDetails.quantity,
-		description: transactionDetails.description,
-		requestLetter: transactions.requestLetterBase64,
-		photo: transactions.photoBase64
-	})
-	.from(transactions)
-	.leftJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
-	.leftJoin(ulps, eq(transactions.targetUlpId, ulps.id))
-	.leftJoin(materials, eq(transactionDetails.materialId, materials.id))
-	.orderBy(desc(transactions.createdAt))
-	.limit(200);
-
-	// Group history rows by transaction to handle multi-item
-	const historyMap = new Map();
-	historyRows.forEach(row => {
-		// Filter based on role
-		if (user.role === 'ADMIN_UP3' && row.type === 'USAGE') return;
-		if (user.role === 'ADMIN_ULP' && row.targetUlpId !== user.ulpId) return;
-
-		if (!historyMap.has(row.id)) {
-			historyMap.set(row.id, {
-				id: row.id,
-				referenceNumber: row.referenceNumber,
-				date: row.date,
-				targetUlp: row.targetUlp,
-				status: row.status,
-				type: row.type,
-				takerName: row.takerName,
-				usagePurpose: row.usagePurpose,
-				requestLetter: row.requestLetter,
-				photo: row.photo,
-				items: []
-			});
-		}
-		if (row.materialName) {
-			historyMap.get(row.id).items.push({
-				name: row.materialName,
-				quantity: row.quantity,
-				description: row.description
-			});
-		}
-	});
-
 	// Data for ULP: Pending Verifikasi (Distribution from UP3)
 	let pendingVerifikasi: any[] = [];
-	// Data for ULP: Draft Usage (Needs photo to finalize)
+	// Data for ULP & UP3: Draft Usage (Needs photo to finalize)
 	let draftUsages: any[] = [];
 	// Data for UP3: Pending Requests from ULP
 	let requestedTransactions: any[] = [];
 
-	if (user.role === 'ADMIN_ULP') {
-		const pendingRows = await db.select({
-			id: transactions.id,
-			ref: transactions.referenceNumber,
-			takerName: transactions.takerName,
-			date: transactions.createdAt,
-			materialName: materials.name,
-			unit: materials.unit,
-			quantity: transactionDetails.quantity
-		})
-		.from(transactions)
-		.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
-		.innerJoin(materials, eq(transactionDetails.materialId, materials.id))
-		.where(and(eq(transactions.targetUlpId, user.ulpId!), eq(transactions.status, 'DRAFT'), eq(transactions.type, 'DISTRIBUTION')));
+	const usageCondition = user.role === 'ADMIN_UP3' 
+		? isNull(transactions.targetUlpId) 
+		: eq(transactions.targetUlpId, user.ulpId!);
 
-		const verifMap = new Map();
-		pendingRows.forEach(row => {
-			if (!verifMap.has(row.id)) {
-				verifMap.set(row.id, { id: row.id, ref: row.ref, takerName: row.takerName, date: row.date, items: [] });
-			}
-			verifMap.get(row.id).items.push({ name: row.materialName, quantity: row.quantity, unit: row.unit });
-		});
-		pendingVerifikasi = Array.from(verifMap.values());
+	const usageRows = await db.select({
+		id: transactions.id,
+		ref: transactions.referenceNumber,
+		purpose: transactions.usagePurpose,
+		date: transactions.createdAt,
+		materialName: materials.name,
+		unit: materials.unit,
+		quantity: transactionDetails.quantity
+	})
+	.from(transactions)
+	.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
+	.innerJoin(materials, eq(transactionDetails.materialId, materials.id))
+	.where(and(usageCondition, eq(transactions.status, 'DRAFT'), eq(transactions.type, 'USAGE')));
 
-		const usageRows = await db.select({
-			id: transactions.id,
-			ref: transactions.referenceNumber,
-			purpose: transactions.usagePurpose,
-			date: transactions.createdAt,
-			materialName: materials.name,
-			unit: materials.unit,
-			quantity: transactionDetails.quantity
-		})
-		.from(transactions)
-		.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
-		.innerJoin(materials, eq(transactionDetails.materialId, materials.id))
-		.where(and(eq(transactions.targetUlpId, user.ulpId!), eq(transactions.status, 'DRAFT'), eq(transactions.type, 'USAGE')));
-
-		const usageMap = new Map();
-		usageRows.forEach(row => {
-			if (!usageMap.has(row.id)) {
-				usageMap.set(row.id, { id: row.id, ref: row.ref, purpose: row.purpose, date: row.date, items: [] });
-			}
-			usageMap.get(row.id).items.push({ name: row.materialName, quantity: row.quantity, unit: row.unit });
-		});
-		draftUsages = Array.from(usageMap.values());
-	}
+	const usageMap = new Map();
+	usageRows.forEach(row => {
+		if (!usageMap.has(row.id)) {
+			usageMap.set(row.id, { id: row.id, ref: row.ref, purpose: row.purpose, date: row.date, items: [] });
+		}
+		usageMap.get(row.id).items.push({ name: row.materialName, quantity: row.quantity, unit: row.unit });
+	});
+	draftUsages = Array.from(usageMap.values());
 
 	if (user.role === 'ADMIN_UP3') {
 		const reqRows = await db.select({
@@ -217,7 +141,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	return {
 		ulps: allUlps,
 		materials: allMaterials,
-		history: Array.from(historyMap.values()),
+		history: [],
 		pendingVerifikasi,
 		draftUsages,
 		requestedTransactions,
@@ -267,7 +191,7 @@ export const actions: Actions = {
 		return { success: true, message: 'Permintaan Material Berhasil Diajukan!' };
 	},
 
-	// (UP3) Process requested transaction or create new one
+	// (UP3) Process requested transaction or create new one and complete it immediately
 	draft: async ({ request, locals }) => {
 		const user = locals.user;
 		if (user?.role !== 'ADMIN_UP3') return fail(403, { error: 'Akses ditolak.' });
@@ -277,18 +201,23 @@ export const actions: Actions = {
 		const ulpId = formData.get('ulpId') as string;
 		const takerName = formData.get('takerName') as string;
 		const photoBase64 = formData.get('photoBase64') as string;
+		const firstParty = formData.get('firstParty') as string;
 		const materialIds = formData.getAll('materialId[]');
 		const jumlahs = formData.getAll('jumlah[]');
 		const keterangans = formData.getAll('keterangan[]');
 
-		if (!takerName || !photoBase64 || materialIds.length === 0) {
-			return fail(400, { error: 'Lengkapi Nama Pengambil, Foto Dokumentasi, dan minimal 1 material!' });
+		if (!takerName || !firstParty || materialIds.length === 0) {
+			return fail(400, { error: 'Lengkapi Nama Pengambil, Pihak Pertama, dan minimal 1 material!' });
 		}
 
 		// BACKEND STOCK VALIDATION (UP3)
+		let validItemsCount = 0;
 		for (let i = 0; i < materialIds.length; i++) {
 			const matId = parseInt(materialIds[i] as string);
 			const qty = parseInt(jumlahs[i] as string);
+			if (isNaN(qty) || qty <= 0) continue; // Skip items with 0 qty
+
+			validItemsCount++;
 			const [currentStock] = await db.select().from(stocks).where(and(eq(stocks.materialId, matId), isNull(stocks.ulpId)));
 			
 			if (!currentStock || currentStock.quantity < qty) {
@@ -297,40 +226,111 @@ export const actions: Actions = {
 			}
 		}
 
-		let trxId: number;
-		if (requestId) {
-			trxId = parseInt(requestId);
-			await db.update(transactions).set({
-				status: 'DRAFT',
-				takerName: takerName,
-				photoBase64: photoBase64
-			}).where(eq(transactions.id, trxId));
-		} else {
-			if (!ulpId) return fail(400, { error: 'Tentukan ULP Tujuan untuk distribusi baru.' });
-			const refNumber = `DISTR-${Date.now()}`;
-			const [insertTrx] = await db.insert(transactions).values({
-				referenceNumber: refNumber,
-				type: 'DISTRIBUTION',
-				status: 'DRAFT',
-				createdBy: user.id,
-				targetUlpId: parseInt(ulpId),
-				takerName: takerName,
-				photoBase64: photoBase64
-			});
-			trxId = insertTrx.insertId;
+		if (validItemsCount === 0) {
+			return fail(400, { error: 'Gagal! Harus ada minimal 1 material dengan jumlah lebih dari 0 untuk ditransfer.' });
 		}
 
-		// Insert items
-		for (let i = 0; i < materialIds.length; i++) {
-			await db.insert(transactionDetails).values({
-				transactionId: trxId,
-				materialId: parseInt(materialIds[i] as string),
-				quantity: parseInt(jumlahs[i] as string),
-				description: keterangans[i] as string
-			});
-		}
+		const result = await db.transaction(async (tx) => {
+			let trxId: number;
+			let refNumber: string;
+			let targetUlpIdVal: number;
 
-		return { success: true, message: 'Distribusi Material Berhasil Diproses (Menunggu Konfirmasi ULP)!' };
+			if (requestId) {
+				trxId = parseInt(requestId);
+				const [existingTrx] = await tx.select().from(transactions).where(eq(transactions.id, trxId));
+				if (!existingTrx) throw new Error('Permintaan tidak ditemukan.');
+				refNumber = existingTrx.referenceNumber;
+				targetUlpIdVal = existingTrx.targetUlpId!;
+
+				await tx.update(transactions).set({
+					status: 'COMPLETED',
+					takerName: takerName,
+					photoBase64: photoBase64,
+					firstParty: firstParty,
+					approvedAt: new Date()
+				}).where(eq(transactions.id, trxId));
+			} else {
+				if (!ulpId) throw new Error('Tentukan ULP Tujuan untuk transfer baru.');
+				targetUlpIdVal = parseInt(ulpId);
+				refNumber = `TRANSFER-${Date.now()}`;
+				const [insertTrx] = await tx.insert(transactions).values({
+					referenceNumber: refNumber,
+					type: 'DISTRIBUTION',
+					status: 'COMPLETED',
+					createdBy: user.id,
+					targetUlpId: targetUlpIdVal,
+					takerName: takerName,
+					photoBase64: photoBase64,
+					firstParty: firstParty,
+					approvedAt: new Date()
+				});
+				trxId = insertTrx.insertId;
+			}
+
+			// Hapus detail transaksi lama jika ada (untuk menghindari duplikasi saat memproses permintaan)
+			await tx.delete(transactionDetails).where(eq(transactionDetails.transactionId, trxId));
+
+			// Insert items and adjust stocks
+			for (let i = 0; i < materialIds.length; i++) {
+				const matId = parseInt(materialIds[i] as string);
+				const qty = parseInt(jumlahs[i] as string);
+				const descValue = keterangans[i] as string || '';
+
+				if (isNaN(qty) || qty <= 0) continue; // Skip items with 0 quantity!
+
+				await tx.insert(transactionDetails).values({
+					transactionId: trxId,
+					materialId: matId,
+					quantity: qty,
+					description: descValue
+				});
+
+				// Deduct from UP3 central stock
+				const [up3Stock] = await tx.select().from(stocks).where(and(eq(stocks.materialId, matId), isNull(stocks.ulpId)));
+				if (!up3Stock || up3Stock.quantity < qty) {
+					const [mat] = await tx.select().from(materials).where(eq(materials.id, matId));
+					throw new Error(`Stok ${mat?.name} tidak cukup di Gudang Pusat.`);
+				}
+				await tx.update(stocks)
+					.set({ quantity: sql`quantity - ${qty}` })
+					.where(eq(stocks.id, up3Stock.id));
+
+				// Add to ULP stock
+				const [ulpStock] = await tx.select().from(stocks).where(and(eq(stocks.materialId, matId), eq(stocks.ulpId, targetUlpIdVal)));
+				if (ulpStock) {
+					await tx.update(stocks)
+						.set({ quantity: sql`quantity + ${qty}` })
+						.where(eq(stocks.id, ulpStock.id));
+				} else {
+					await tx.insert(stocks).values({
+						materialId: matId,
+						ulpId: targetUlpIdVal,
+						quantity: qty
+					});
+				}
+			}
+
+			// Generate QR Code dengan format teks informatif seperti PLN AMS
+			const origin = new URL(request.url).origin;
+			const validationUrl = `${origin}/validasi/${refNumber}`;
+			const [targetUlp] = await tx.select({ name: ulps.name }).from(ulps).where(eq(ulps.id, targetUlpIdVal));
+			const ulpName = targetUlp?.name || 'ULP';
+			const firstPartyName = (firstParty || 'NANANG DARYANTO').toUpperCase();
+			const qrContent = `UP3 MADURA - ${firstPartyName}\nNo.BAST: ${refNumber}\nPenerima: ${takerName} - ULP ${ulpName}\nDokumen ini diproduksi oleh ${validationUrl}`;
+			const qrCodeBase64 = await QRCode.toDataURL(qrContent, { errorCorrectionLevel: 'M', margin: 2 });
+
+			await tx.update(transactions)
+				.set({ qrCodeBase64 })
+				.where(eq(transactions.id, trxId));
+
+			return { success: true };
+		}).catch(err => {
+			return { error: err.message };
+		});
+
+		if (result.error) return fail(400, { error: result.error });
+
+		return { success: true, message: 'Transfer Material Berhasil Diproses dan Selesai!' };
 	},
 
 	// (UP3) Tolak Permintaan ULP
@@ -365,10 +365,10 @@ export const actions: Actions = {
 		return { success: true, message: 'Penerimaan telah dikonfirmasi!' };
 	},
 
-	// (ULP) Input Pemakaian Lapangan (Draft or Completed)
+	// (UP3 & ULP) Input Pemakaian Lapangan (Draft or Completed)
 	penggunaan: async ({ request, locals }) => {
 		const user = locals.user;
-		if (user?.role !== 'ADMIN_ULP') return fail(403, { error: 'Akses ditolak.' });
+		if (user?.role !== 'ADMIN_ULP' && user?.role !== 'ADMIN_UP3') return fail(403, { error: 'Akses ditolak.' });
 
 		const formData = await request.formData();
 		const tanggal = formData.get('tanggal') as string;
@@ -384,21 +384,20 @@ export const actions: Actions = {
 			return fail(400, { error: 'Lengkapi detail pemakaian dan minimal 1 material!' });
 		}
 
-		// BACKEND STOCK VALIDATION (ULP)
+		// BACKEND STOCK VALIDATION
 		for (let i = 0; i < materialIds.length; i++) {
 			const matId = parseInt(materialIds[i] as string);
 			const qty = parseInt(jumlahs[i] as string);
-			const [currentStock] = await db.select().from(stocks).where(and(eq(stocks.materialId, matId), eq(stocks.ulpId, user.ulpId!)));
+			const stockCondition = user.role === 'ADMIN_UP3' ? isNull(stocks.ulpId) : eq(stocks.ulpId, user.ulpId!);
+			const [currentStock] = await db.select().from(stocks).where(and(eq(stocks.materialId, matId), stockCondition));
 			
 			if (!currentStock || currentStock.quantity < qty) {
 				const [mat] = await db.select().from(materials).where(eq(materials.id, matId));
-				return fail(400, { error: `Gagal! Stok ${mat?.name} tidak cukup di gudang anda.` });
+				return fail(400, { error: `Gagal! Stok ${mat?.name} tidak cukup di gudang.` });
 			}
 		}
 
-		if (targetStatus === 'COMPLETED' && !photoBase64) {
-			return fail(400, { error: 'Wajib mengunggah foto bukti untuk konfirmasi pemakaian!' });
-		}
+
 
 		// Use a transaction for stock deduction if COMPLETED
 		const result = await db.transaction(async (tx) => {
@@ -407,7 +406,8 @@ export const actions: Actions = {
 					const matId = parseInt(materialIds[i] as string);
 					const qty = parseInt(jumlahs[i] as string);
 					
-					const [currentStock] = await tx.select().from(stocks).where(and(eq(stocks.materialId, matId), eq(stocks.ulpId, user.ulpId!)));
+					const stockCondition = user.role === 'ADMIN_UP3' ? isNull(stocks.ulpId) : eq(stocks.ulpId, user.ulpId!);
+					const [currentStock] = await tx.select().from(stocks).where(and(eq(stocks.materialId, matId), stockCondition));
 					if (!currentStock || currentStock.quantity < qty) {
 						const [mat] = await tx.select().from(materials).where(eq(materials.id, matId));
 						throw new Error(`Stok ${mat?.name} tidak cukup.`);
@@ -416,16 +416,16 @@ export const actions: Actions = {
 				}
 			}
 
-			const refNumber = `PEMAKAIAN-${user.ulpId}-${Date.now()}`;
+			const refNumber = user.role === 'ADMIN_UP3' ? `PEMAKAIAN-UP3-${Date.now()}` : `PEMAKAIAN-${user.ulpId}-${Date.now()}`;
 			const [insertTrx] = await tx.insert(transactions).values({
 				referenceNumber: refNumber,
 				type: 'USAGE',
 				status: targetStatus === 'COMPLETED' ? 'COMPLETED' : 'DRAFT',
 				createdBy: user.id,
-				targetUlpId: user.ulpId,
+				targetUlpId: user.role === 'ADMIN_UP3' ? null : user.ulpId,
 				takerName: takerName,
 				usagePurpose: usagePurpose,
-				photoBase64: targetStatus === 'COMPLETED' ? photoBase64 : null,
+				photoBase64: photoBase64 || null,
 				createdAt: new Date(tanggal)
 			});
 
@@ -453,23 +453,24 @@ export const actions: Actions = {
 		};
 	},
 
-	// (ULP) Finalisasi Pemakaian Lapangan + Potong Stok
+	// (UP3 & ULP) Finalisasi Pemakaian Lapangan + Potong Stok
 	finalisasiPemakaian: async ({ request, locals }) => {
 		const user = locals.user;
-		if (user?.role !== 'ADMIN_ULP') return fail(403, { error: 'Akses ditolak.' });
+		if (user?.role !== 'ADMIN_ULP' && user?.role !== 'ADMIN_UP3') return fail(403, { error: 'Akses ditolak.' });
 
 		const formData = await request.formData();
 		const trxId = formData.get('transactionId') as string;
 		const photoBase64 = formData.get('photoBase64') as string;
 
-		if (!trxId || !photoBase64) return fail(400, { error: 'Pilih draf pemakaian dan unggah foto bukti!' });
+		if (!trxId) return fail(400, { error: 'Pilih draf pemakaian!' });
 
 		const id = parseInt(trxId);
 		const details = await db.select().from(transactionDetails).where(eq(transactionDetails.transactionId, id));
 		
 		// Validasi Stok dan Potong Stok
 		for (const d of details) {
-			const [currentStock] = await db.select().from(stocks).where(and(eq(stocks.materialId, d.materialId), eq(stocks.ulpId, user.ulpId!)));
+			const stockCondition = user.role === 'ADMIN_UP3' ? isNull(stocks.ulpId) : eq(stocks.ulpId, user.ulpId!);
+			const [currentStock] = await db.select().from(stocks).where(and(eq(stocks.materialId, d.materialId), stockCondition));
 			if (!currentStock || currentStock.quantity < d.quantity) {
 				const [mat] = await db.select().from(materials).where(eq(materials.id, d.materialId));
 				return fail(400, { error: `Gagal! Stok ${mat?.name} tidak cukup.` });
@@ -479,7 +480,7 @@ export const actions: Actions = {
 
 		await db.update(transactions).set({
 			status: 'COMPLETED',
-			photoBase64: photoBase64
+			photoBase64: photoBase64 || null
 		}).where(eq(transactions.id, id));
 
 		return { success: true, message: 'Pemakaian Lapangan Selesai! Stok telah terpotong.' };
@@ -500,7 +501,7 @@ export const actions: Actions = {
 
 		const details = await db.select().from(transactionDetails).where(eq(transactionDetails.transactionId, trx.id));
 		if (details.length === 0) {
-			return fail(400, { error: 'Detail transaksi distribusi tidak ditemukan.' });
+			return fail(400, { error: 'Detail transaksi transfer tidak ditemukan.' });
 		}
 
 		// Mutasi Stok Real-time Logic (Multi-item)
@@ -535,10 +536,14 @@ export const actions: Actions = {
 			}
 		}
 
-		// Generate QR Code
+		// Generate QR Code dengan format teks informatif seperti PLN AMS
 		const origin = new URL(request.url).origin;
 		const validationUrl = `${origin}/validasi/${trx.referenceNumber}`;
-		const qrCodeBase64 = await QRCode.toDataURL(validationUrl);
+		const [targetUlpData] = await db.select({ name: ulps.name }).from(ulps).where(eq(ulps.id, trx.targetUlpId!));
+		const ulpNameFin = targetUlpData?.name || 'ULP';
+		const firstPartyNameFin = (trx.firstParty || 'NANANG DARYANTO').toUpperCase();
+		const qrContent = `UP3 MADURA - ${firstPartyNameFin}\nNo.BAST: ${trx.referenceNumber}\nPenerima: ${trx.takerName} - ULP ${ulpNameFin}\nDokumen ini diproduksi oleh ${validationUrl}`;
+		const qrCodeBase64 = await QRCode.toDataURL(qrContent, { errorCorrectionLevel: 'M', margin: 2 });
 
 		await db.update(transactions)
 			.set({ status: 'COMPLETED', qrCodeBase64 })
