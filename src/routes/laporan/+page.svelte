@@ -2,7 +2,16 @@
 	import XLSX from 'xlsx-js-style';
 	
 	let { data } = $props();
-	let activeTab = $state('MUTASI'); // MUTASI | PEMAKAIAN
+	let activeTab = $state(data.activeTab || 'MUTASI'); // MUTASI | PEMAKAIAN
+
+	function switchTab(tab: string) {
+		activeTab = tab;
+		if (typeof window !== 'undefined') {
+			const url = new URL(window.location.href);
+			url.searchParams.set('tab', tab);
+			window.history.replaceState({}, '', url.toString());
+		}
+	}
 
 	function handleDownload() {
 		if (activeTab === 'MUTASI') {
@@ -260,27 +269,45 @@
 
 <!-- Filters Panel -->
 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
-	<form method="GET" class="grid grid-cols-1 {data.userRole === 'ADMIN_UP3' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 items-end text-sm">
-		<div>
-			<label for="startDate" class="block text-xs font-bold text-gray-500 uppercase mb-1">Mulai Tanggal</label>
-			<input 
-				type="date" 
-				name="startDate" 
-				value={data.startDate} 
-				onchange={(e) => e.currentTarget.form?.submit()}
-				class="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-500 shadow-sm" 
-			/>
-		</div>
-		<div>
-			<label for="endDate" class="block text-xs font-bold text-gray-500 uppercase mb-1">Sampai Tanggal</label>
-			<input 
-				type="date" 
-				name="endDate" 
-				value={data.endDate} 
-				onchange={(e) => e.currentTarget.form?.submit()}
-				class="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-500 shadow-sm" 
-			/>
-		</div>
+	<form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end text-sm">
+		<input type="hidden" name="tab" value={activeTab} />
+		
+		{#if activeTab === 'MUTASI'}
+			<div>
+				<label for="startDate" class="block text-xs font-bold text-gray-500 uppercase mb-1">Mulai Tanggal</label>
+				<input 
+					type="date" 
+					name="startDate" 
+					value={data.startDate} 
+					onchange={(e) => e.currentTarget.form?.submit()}
+					class="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-500 shadow-sm" 
+				/>
+			</div>
+			<div>
+				<label for="endDate" class="block text-xs font-bold text-gray-500 uppercase mb-1">Sampai Tanggal</label>
+				<input 
+					type="date" 
+					name="endDate" 
+					value={data.endDate} 
+					onchange={(e) => e.currentTarget.form?.submit()}
+					class="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-500 shadow-sm" 
+				/>
+			</div>
+		{:else}
+			<div>
+				<label for="year" class="block text-xs font-bold text-gray-500 uppercase mb-1">Pilih Tahun</label>
+				<select 
+					name="year" 
+					onchange={(e) => e.currentTarget.form?.submit()}
+					class="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-500 bg-white cursor-pointer hover:border-gray-400 transition-all font-semibold"
+				>
+					{#each data.yearsList as y}
+						<option value={y} selected={data.currentYear === y}>{y}</option>
+					{/each}
+				</select>
+			</div>
+		{/if}
+
 		{#if data.userRole === 'ADMIN_UP3'}
 			<div>
 				<label for="ulpId" class="block text-xs font-bold text-gray-500 uppercase mb-1">Pilih Unit</label>
@@ -303,14 +330,14 @@
 <div class="flex border-b border-gray-200 mb-6 gap-2">
 	<button 
 		type="button"
-		onclick={() => activeTab = 'MUTASI'} 
+		onclick={() => switchTab('MUTASI')} 
 		class="px-5 py-2.5 font-bold text-sm transition-all border-b-2 {activeTab === 'MUTASI' ? 'border-[#0A417A] text-[#0A417A]' : 'border-transparent text-gray-500 hover:text-gray-700'} cursor-pointer"
 	>
 		📋 Rekap Mutasi Stok
 	</button>
 	<button 
 		type="button"
-		onclick={() => activeTab = 'PEMAKAIAN'} 
+		onclick={() => switchTab('PEMAKAIAN')} 
 		class="px-5 py-2.5 font-bold text-sm transition-all border-b-2 {activeTab === 'PEMAKAIAN' ? 'border-[#0A417A] text-[#0A417A]' : 'border-transparent text-gray-500 hover:text-gray-700'} cursor-pointer"
 	>
 		📈 Analisis Pemakaian Bulanan ({data.currentYear})

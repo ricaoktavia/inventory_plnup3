@@ -104,12 +104,14 @@ export const load: PageServerLoad = async ({ parent }) => {
 			type: transactions.type,
 			requestLetter: transactions.requestLetterBase64,
 			materialId: transactionDetails.materialId,
+			materialName: materials.name,
 			quantity: transactionDetails.quantity,
 			description: transactionDetails.description
 		})
 		.from(transactions)
 		.innerJoin(ulps, eq(transactions.targetUlpId, ulps.id))
 		.leftJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
+		.leftJoin(materials, eq(transactionDetails.materialId, materials.id))
 		.where(eq(transactions.status, 'REQUESTED'));
 		
 		const reqMap = new Map();
@@ -130,6 +132,8 @@ export const load: PageServerLoad = async ({ parent }) => {
 			if (row.materialId) {
 				reqMap.get(row.id).items.push({
 					materialId: row.materialId.toString(),
+					name: row.materialName || '',
+					quantity: row.quantity,
 					jumlah: row.quantity,
 					keterangan: row.description || ''
 				});

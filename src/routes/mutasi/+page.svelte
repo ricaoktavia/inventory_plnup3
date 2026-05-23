@@ -217,12 +217,12 @@
 							INPUT STOK AWAL
 						</button>
 					{/if}
-					{#if (data.history || []).filter(t => t.status === 'REQUESTED' && t.type === 'INITIAL_STOCK').length > 0 || up3ActiveTab === 'KONFIRMASI_STOK'}
+					{#if (data.requestedTransactions || []).filter(t => t.type === 'INITIAL_STOCK').length > 0 || up3ActiveTab === 'KONFIRMASI_STOK'}
 						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'KONFIRMASI_STOK' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => up3ActiveTab = 'KONFIRMASI_STOK'}>
 							PERSETUJUAN STOK ULP
-							{#if (data.history || []).filter(t => t.status === 'REQUESTED' && t.type === 'INITIAL_STOCK').length > 0}
+							{#if (data.requestedTransactions || []).filter(t => t.type === 'INITIAL_STOCK').length > 0}
 								<span class="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full ml-1">
-									{(data.history || []).filter(t => t.status === 'REQUESTED' && t.type === 'INITIAL_STOCK').length}
+									{(data.requestedTransactions || []).filter(t => t.type === 'INITIAL_STOCK').length}
 								</span>
 							{/if}
 						</button>
@@ -592,10 +592,10 @@
 						</form>
 					</div>
 				{:else if up3ActiveTab === 'KONFIRMASI_STOK'}
-					{@const pendingStocks = (data.history || []).filter(t => t.status === 'REQUESTED' && t.type === 'INITIAL_STOCK')}
+					{@const pendingStocks = (data.requestedTransactions || []).filter(t => t.type === 'INITIAL_STOCK')}
 					{@const groupedStocks = pendingStocks.reduce((acc, trx) => {
-						if (!acc[trx.targetUlp]) acc[trx.targetUlp] = [];
-						acc[trx.targetUlp].push(trx);
+						if (!acc[trx.ulpName]) acc[trx.ulpName] = [];
+						acc[trx.ulpName].push(trx);
 						return acc;
 					}, {} as Record<string, typeof pendingStocks>)}
 					<div class="flex-1 flex flex-col space-y-6">

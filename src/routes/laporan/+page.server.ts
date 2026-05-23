@@ -10,6 +10,17 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const endDateStr = url.searchParams.get('endDate') || new Date().toISOString().split('T')[0];
 	const selectedUlpId = url.searchParams.get('ulpId') || (user?.role === 'ADMIN_UP3' ? 'up3' : user?.ulpId?.toString()) || 'up3';
 
+	const currentYear = new Date().getFullYear();
+	const selectedYearStr = url.searchParams.get('year') || currentYear.toString();
+	const year = parseInt(selectedYearStr) || currentYear;
+
+	const yearsList = [];
+	for (let y = currentYear - 3; y <= currentYear + 3; y++) {
+		yearsList.push(y);
+	}
+
+	const activeTab = url.searchParams.get('tab') || 'MUTASI';
+
 	const start = new Date(startDateStr);
 	const end = new Date(endDateStr);
 	end.setHours(23, 59, 59, 999);
@@ -126,7 +137,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	}
 
 	// Calculate monthly usage trends (for Jan-Dec of current year)
-	const year = 2026;
 	const conditions = [
 		eq(transactions.type, 'USAGE'),
 		eq(transactions.status, 'COMPLETED'),
@@ -189,6 +199,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		reportData,
 		monthlyUsageData,
 		currentYear: year,
+		yearsList,
+		activeTab,
 		allUlps,
 		startDate: startDateStr,
 		endDate: endDateStr,

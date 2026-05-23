@@ -22,9 +22,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	));
 
 	const criticalStocksCount = criticalStocksQuery.filter(
-		item => isUP3 
-			? (item.quantity === null || item.quantity < limitQuantity)
-			: (item.quantity !== null && item.quantity < limitQuantity)
+		item => item.quantity === null || item.quantity < limitQuantity
 	).length;
 
 	// 2. Pending Actions (Drafts waiting for ULP)
