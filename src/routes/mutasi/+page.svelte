@@ -340,20 +340,18 @@
 													<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
 												{:else}
 													{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials) as mat}
-														{@const isDisabled = mat.stock <= 0}
 														<button
 															type="button"
-															disabled={isDisabled}
 															onmousedown={(e) => {
 																e.preventDefault();
 																row.materialId = mat.id.toString();
 																row.searchQuery = mat.name;
 																row.showDropdown = false;
 															}}
-															class="w-full text-left px-3 py-2 hover:bg-cyan-50 text-[#0A417A] font-bold flex justify-between items-center transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+															class="w-full text-left px-3 py-2 hover:bg-cyan-50 text-[#0A417A] font-bold flex justify-between items-center transition-colors"
 														>
 															<span class="truncate pr-2">{mat.name} ({mat.unit})</span>
-															<span class="text-[10px] text-gray-400 shrink-0">STOK: {mat.stock}</span>
+															<span class="text-[10px] text-gray-400 shrink-0 {mat.stock <= 0 ? 'text-red-500 font-bold' : ''}">STOK: {mat.stock}</span>
 														</button>
 													{/each}
 												{/if}
@@ -369,7 +367,6 @@
 												bind:value={row.jumlah}
 												required 
 												min="0"
-												max={data.materials.find(m => m.id.toString() === row.materialId)?.stock || 1000000}
 												class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs text-center outline-none {row.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0) ? 'border-red-500 bg-red-50 text-red-600' : ''}"
 											>
 										</div>
@@ -497,20 +494,18 @@
 																	<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
 																{:else}
 																	{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials) as mat}
-																		{@const isDisabled = mat.stock <= 0}
 																		<button
 																			type="button"
-																			disabled={isDisabled}
 																			onmousedown={(e) => {
 																				e.preventDefault();
 																				row.materialId = mat.id.toString();
 																				row.searchQuery = mat.name;
 																				row.showDropdown = false;
 																			}}
-																			class="w-full text-left px-3 py-2 hover:bg-cyan-50 text-[#0A417A] font-bold flex justify-between items-center transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+																			class="w-full text-left px-3 py-2 hover:bg-cyan-50 text-[#0A417A] font-bold flex justify-between items-center transition-colors"
 																		>
 																			<span class="truncate pr-2">{mat.name} ({mat.unit})</span>
-																			<span class="text-[10px] text-gray-400 shrink-0">SISA: {mat.stock}</span>
+																			<span class="text-[10px] text-gray-400 shrink-0 {mat.stock <= 0 ? 'text-red-500 font-bold' : ''}">SISA: {mat.stock}</span>
 																		</button>
 																	{/each}
 																{/if}
@@ -531,7 +526,6 @@
 																bind:value={row.jumlah}
 																required 
 																min="1"
-																max={data.materials.find(m => m.id.toString() === row.materialId)?.stock || 1000000}
 																class="w-full border-b-2 border-gray-100 rounded px-1 py-1 text-sm text-center font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors {row.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0) ? 'text-red-500 border-red-200 bg-red-50' : ''}"
 															>
 															<span class="text-[10px] font-bold text-gray-400 truncate">{data.materials.find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
@@ -943,7 +937,13 @@
 					<div class="flex-1 flex flex-col space-y-6">
 						<h2 class="text-xl font-bold text-[#0A417A] mb-2 font-black italic tracking-tighter uppercase">Input Pemakaian Lapangan</h2>
 						
-						<form method="POST" action="?/penggunaan" use:enhance={handleEnhance} class="space-y-6">
+						<form method="POST" action="?/penggunaan" use:enhance={handleEnhance} onsubmit={(e) => {
+							const submitter = e.submitter as HTMLButtonElement | null;
+							if (submitter && submitter.value === 'COMPLETED' && !fileBase64) {
+								e.preventDefault();
+								alert('Foto bukti (eviden) wajib diunggah untuk konfirmasi pemakaian!');
+							}
+						}} class="space-y-6">
 							<!-- Header Info -->
 							<div class="grid grid-cols-2 gap-4">
 								<div class="space-y-1.5">
@@ -1000,19 +1000,18 @@
 																	<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
 																{:else}
 																	{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials) as mat}
-																		{@const isDisabled = mat.stock <= 0}
 																		<button
 																			type="button"
-																			disabled={isDisabled}
-																			onclick={() => {
+																			onmousedown={(e) => {
+																				e.preventDefault();
 																				row.materialId = mat.id.toString();
 																				row.searchQuery = mat.name;
 																				row.showDropdown = false;
 																			}}
-																			class="w-full text-left px-3 py-2 hover:bg-cyan-50 text-[#0A417A] font-bold flex justify-between items-center transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+																			class="w-full text-left px-3 py-2 hover:bg-cyan-50 text-[#0A417A] font-bold flex justify-between items-center transition-colors"
 																		>
 																			<span class="truncate pr-2">{mat.name} ({mat.unit})</span>
-																			<span class="text-[10px] text-gray-400 shrink-0">SISA: {mat.stock}</span>
+																			<span class="text-[10px] text-gray-400 shrink-0 {mat.stock <= 0 ? 'text-red-500 font-bold' : ''}">SISA: {mat.stock}</span>
 																		</button>
 																	{/each}
 																{/if}
@@ -1033,7 +1032,6 @@
 																bind:value={row.jumlah}
 																required 
 																min="1"
-																max={data.materials.find(m => m.id.toString() === row.materialId)?.stock || 1000000}
 																class="w-full border-b-2 border-gray-100 rounded px-1 py-1 text-sm text-center font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors {row.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0) ? 'text-red-500 border-red-200 bg-red-50' : ''}"
 															>
 															<span class="text-[10px] font-bold text-gray-400 truncate">{data.materials.find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
@@ -1102,7 +1100,7 @@
 									{#if isSubmitting} MEMPROSES... {:else} KONFIRMASI PEMAKAIAN {/if}
 								</button>
 							</div>
-							<p class="text-[10px] text-gray-400 font-medium italic text-center">*Foto bukti bersifat opsional.</p>
+							<p class="text-[10px] text-red-500 font-bold italic text-center">*Foto bukti (eviden) wajib diunggah untuk konfirmasi pemakaian, opsional untuk draf.</p>
 						</form>
 					</div>
 				{:else if ulpActiveTab === 'STOK_AWAL'}

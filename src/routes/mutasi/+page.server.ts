@@ -388,16 +388,23 @@ export const actions: Actions = {
 			return fail(400, { error: 'Lengkapi detail pemakaian dan minimal 1 material!' });
 		}
 
+		// BACKEND PHOTO EVIDEN VALIDATION FOR ULP
+		if (targetStatus === 'COMPLETED' && user.role === 'ADMIN_ULP' && !photoBase64) {
+			return fail(400, { error: 'Gagal! Foto bukti (eviden) wajib diunggah untuk konfirmasi pemakaian.' });
+		}
+
 		// BACKEND STOCK VALIDATION
-		for (let i = 0; i < materialIds.length; i++) {
-			const matId = parseInt(materialIds[i] as string);
-			const qty = parseInt(jumlahs[i] as string);
-			const stockCondition = user.role === 'ADMIN_UP3' ? isNull(stocks.ulpId) : eq(stocks.ulpId, user.ulpId!);
-			const [currentStock] = await db.select().from(stocks).where(and(eq(stocks.materialId, matId), stockCondition));
-			
-			if (!currentStock || currentStock.quantity < qty) {
-				const [mat] = await db.select().from(materials).where(eq(materials.id, matId));
-				return fail(400, { error: `Gagal! Stok ${mat?.name} tidak cukup di gudang.` });
+		if (targetStatus === 'COMPLETED') {
+			for (let i = 0; i < materialIds.length; i++) {
+				const matId = parseInt(materialIds[i] as string);
+				const qty = parseInt(jumlahs[i] as string);
+				const stockCondition = user.role === 'ADMIN_UP3' ? isNull(stocks.ulpId) : eq(stocks.ulpId, user.ulpId!);
+				const [currentStock] = await db.select().from(stocks).where(and(eq(stocks.materialId, matId), stockCondition));
+				
+				if (!currentStock || currentStock.quantity < qty) {
+					const [mat] = await db.select().from(materials).where(eq(materials.id, matId));
+					return fail(400, { error: `Gagal! Stok ${mat?.name} tidak cukup di gudang.` });
+				}
 			}
 		}
 
