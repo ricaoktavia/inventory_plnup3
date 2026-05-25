@@ -338,15 +338,21 @@
 
 					<!-- Foto Dokumentasi (UP3) -->
 					<div class="space-y-1.5 border-t border-gray-100 pt-4">
-						<label class="block text-sm font-bold text-[#0A417A]">Foto Dokumentasi Serah Terima (Upload)</label>
+						<label class="block text-sm font-bold text-[#0A417A]">
+							Foto Dokumentasi Serah Terima
+							<span class="text-red-500 ml-1">*</span>
+							<span class="text-[10px] font-normal text-red-500 ml-1">(Wajib diisi)</span>
+						</label>
 						<div class="flex items-center gap-4">
-							<label class="cursor-pointer bg-white text-gray-700 px-4 py-2 rounded-lg font-bold border border-gray-300 shadow-sm inline-flex items-center hover:bg-gray-50 transition-all text-xs">
-								<svg class="w-4 h-4 mr-2 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
-								Upload
+							<label class="cursor-pointer bg-white text-gray-700 px-4 py-2 rounded-lg font-bold border {fileBase64 ? 'border-green-400' : 'border-red-300'} shadow-sm inline-flex items-center hover:bg-gray-50 transition-all text-xs">
+								<svg class="w-4 h-4 mr-2 {fileBase64 ? 'text-green-600' : 'text-red-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+								Upload Foto
 								<input type="file" accept="image/*" capture="environment" class="hidden" onchange={(e) => handleFileChange(e, 'PHOTO')} />
 							</label>
 							{#if fileBase64}
 								<span class="text-xs text-green-600 font-bold italic animate-pulse">✓ Foto Dokumentasi Siap!</span>
+							{:else}
+								<span class="text-xs text-red-500 font-semibold italic">⚠ Foto belum diupload</span>
 							{/if}
 							<input type="hidden" name="photoBase64" value={fileBase64}>
 						</div>
@@ -358,12 +364,19 @@
 								TOLAK PERMINTAAN
 							</button>
 						{/if}
-						<button type="submit" class="flex-1 bg-[#FFD500] hover:bg-[#FFAB00] text-[#0A417A] font-black text-lg py-4 rounded-xl shadow-lg disabled:opacity-50" disabled={isSubmitting}>
+						<button
+							type="submit"
+							class="flex-1 bg-[#FFD500] hover:bg-[#FFAB00] text-[#0A417A] font-black text-lg py-4 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
+							disabled={isSubmitting || !fileBase64}
+							title={!fileBase64 ? 'Upload foto dokumentasi serah terima terlebih dahulu' : ''}
+						>
 							{#if isSubmitting}
 								<div class="flex items-center justify-center">
 									<svg class="animate-spin h-6 w-6 mr-3 border-4 border-[#0A417A] border-t-transparent rounded-full" viewBox="0 0 24 24"></svg>
 									MEMPROSES...
 								</div>
+							{:else if !fileBase64}
+								📷 Upload Foto Dulu
 							{:else}
 								PROSES TRANSFER
 							{/if}

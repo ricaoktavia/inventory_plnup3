@@ -5,6 +5,16 @@
 
 	let isModalOpen = $state(false);
 	let editData = $state<{id: number, name: string, unit: string, currentStock: number} | null>(null);
+	let searchQuery = $state('');
+
+	// Filtered materials based on search query
+	let filteredMaterials = $derived(
+		searchQuery.trim() === ''
+			? data.materials
+			: data.materials.filter((m: {name: string}) =>
+					m.name.toLowerCase().includes(searchQuery.toLowerCase())
+			  )
+	);
 
 	// Close modal on successful form submission
 	$effect(() => {
@@ -62,6 +72,33 @@
 	<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm font-medium">⚠️ {form.error}</div>
 {/if}
 
+<!-- SEARCH BAR -->
+<div class="mb-4 relative">
+	<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+		<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+		</svg>
+	</div>
+	<input
+		type="text"
+		id="search-material"
+		bind:value={searchQuery}
+		placeholder="Cari nama material..."
+		class="w-full pl-11 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0188CE] focus:border-[#0188CE] transition-all placeholder:text-gray-400"
+	/>
+	{#if searchQuery}
+		<button
+			onclick={() => searchQuery = ''}
+			class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+			aria-label="Hapus pencarian"
+		>
+			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+			</svg>
+		</button>
+	{/if}
+</div>
+
 <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden flex flex-col">
 	<div class="overflow-x-auto">
 		<table class="w-full text-left border-collapse min-w-[800px]">
@@ -100,12 +137,14 @@
 				</tr>
 			</thead>
 			<tbody class="divide-y divide-gray-100">
-				{#if data.materials.length === 0}
+				{#if filteredMaterials.length === 0}
 					<tr>
-						<td colspan="20" class="px-6 py-10 text-center text-gray-500 bg-gray-50/50">Belum ada material yang terdaftar.</td>
+						<td colspan="20" class="px-6 py-10 text-center text-gray-500 bg-gray-50/50">
+							{searchQuery ? `Tidak ditemukan material dengan nama "${searchQuery}".` : 'Belum ada material yang terdaftar.'}
+						</td>
 					</tr>
 				{:else}
-					{#each data.materials as material, i}
+					{#each filteredMaterials as material, i}
 						<tr class="hover:bg-gray-50/80 transition-colors duration-150 text-xs">
 							<td class="px-4 py-4 text-center text-gray-400 font-medium sticky left-0 bg-white border-r border-gray-50">{i + 1}</td>
 							<td class="px-4 py-4 sticky left-12 bg-white z-0 shadow-[2px_0_5px_rgba(0,0,0,0.02)] border-r border-gray-50">
