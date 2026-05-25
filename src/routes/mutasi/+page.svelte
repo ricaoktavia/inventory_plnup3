@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
+	import { loadingState } from '$lib/loadingState.svelte';
 
 	let { data, form } = $props();
 
@@ -10,6 +11,7 @@
 
 	function handleEnhance({ action }: { action: URL }) {
 		isSubmitting = true;
+		loadingState.start('Memproses Transaksi...', 3000);
 		const startTime = Date.now();
 
 		return async ({ result, update }: { result: any, update: any }) => {
@@ -20,6 +22,7 @@
 			if (remaining > 0) await new Promise(r => setTimeout(r, remaining));
 			
 			isSubmitting = false;
+			loadingState.stop();
 
 			if (result.type === 'success') {
 				// Reset specific states based on the action

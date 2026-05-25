@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { loadingState } from '$lib/loadingState.svelte';
 	let { data, form } = $props();
 
 	// Filters
@@ -89,12 +90,14 @@
 
 	function handleEnhance() {
 		isSubmitting = true;
+		loadingState.start('Memproses Data...', 3000);
 		const startTime = Date.now();
 		return async ({ result, update }: { result: any, update: any }) => {
 			const elapsed = Date.now() - startTime;
 			const remaining = Math.max(0, 2000 - elapsed);
 			if (remaining > 0) await new Promise(r => setTimeout(r, remaining));
 			isSubmitting = false;
+			loadingState.stop();
 			if (result.type === 'success') {
 				finalizingId = null;
 				photoBase64 = '';

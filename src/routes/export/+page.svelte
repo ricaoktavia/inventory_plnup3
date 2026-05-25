@@ -1,5 +1,6 @@
 <script lang="ts">
 	import XLSX from 'xlsx-js-style';
+	import { loadingState } from '$lib/loadingState.svelte';
 
 	let { data } = $props();
 
@@ -61,163 +62,174 @@
 			return;
 		}
 
-		// Prepare excel rows
-		const excelRows: any[][] = [];
+		loadingState.start('Mengekspor Data Excel...', 3000);
 
-		// Header Row
-		excelRows.push([
-			'No',
-			'Tanggal Transaksi',
-			'No BAST / Referensi',
-			'Tipe Transaksi',
-			'Unit ULP / Gudang',
-			'Pihak Pertama (Pengirim)',
-			'Pihak Kedua (Penerima/Taker)',
-			'Keperluan / Tujuan',
-			'Nama Material',
-			'Jumlah',
-			'Satuan',
-			'Keterangan Barang'
-		]);
+		// Wrap in a short timeout to let the loading screen render first
+		setTimeout(() => {
+			try {
+				// Prepare excel rows
+				const excelRows: any[][] = [];
 
-		let idx = 1;
-		filteredHistory.forEach((item: any) => {
-			const formattedDate = new Date(item.date)
-				.toLocaleString('id-ID', {
-					year: 'numeric',
-					month: '2-digit',
-					day: '2-digit',
-					hour: '2-digit',
-					minute: '2-digit'
-				})
-				.replace(/\./g, ':');
-
-			const trxType = getTransactionTypeLabel(item.type, item.targetUlpId, item.ulpName);
-			const firstParty = item.firstParty || (item.type === 'INITIAL_STOCK' ? 'ULP' : 'UP3');
-			const secondParty = item.takerName || '-';
-
-			if (item.items && item.items.length > 0) {
-				item.items.forEach((subItem: any) => {
-					excelRows.push([
-						idx++,
-						formattedDate,
-						item.referenceNumber,
-						trxType,
-						item.ulpName,
-						firstParty,
-						secondParty,
-						item.purpose || '-',
-						subItem.name,
-						subItem.quantity,
-						subItem.unit,
-						subItem.description || '-'
-					]);
-				});
-			} else {
+				// Header Row
 				excelRows.push([
-					idx++,
-					formattedDate,
-					item.referenceNumber,
-					trxType,
-					item.ulpName,
-					firstParty,
-					secondParty,
-					item.purpose || '-',
-					'-',
-					0,
-					'-',
-					'-'
+					'No',
+					'Tanggal Transaksi',
+					'No BAST / Referensi',
+					'Tipe Transaksi',
+					'Unit ULP / Gudang',
+					'Pihak Pertama (Pengirim)',
+					'Pihak Kedua (Penerima/Taker)',
+					'Keperluan / Tujuan',
+					'Nama Material',
+					'Jumlah',
+					'Satuan',
+					'Keterangan Barang'
 				]);
-			}
-		});
 
-		// Create workbook & worksheet
-		const wb = XLSX.utils.book_new();
-		const ws = XLSX.utils.aoa_to_sheet(excelRows);
+				let idx = 1;
+				filteredHistory.forEach((item: any) => {
+					const formattedDate = new Date(item.date)
+						.toLocaleString('id-ID', {
+							year: 'numeric',
+							month: '2-digit',
+							day: '2-digit',
+							hour: '2-digit',
+							minute: '2-digit'
+						})
+						.replace(/\./g, ':');
 
-		// Dynamic column widths calculation (prevent overlapping/text clipping)
-		const colWidths = excelRows[0].map((_, colIndex) => {
-			let maxLen = 10; // minimum fallback width
-			excelRows.forEach(row => {
-				const val = row[colIndex];
-				const len = val ? String(val).length : 0;
-				if (len > maxLen) {
-					maxLen = len;
-				}
-			});
-			return { wch: Math.min(maxLen + 4, 50) }; // cap width at 50 for readability
-		});
-		ws['!cols'] = colWidths;
+					const trxType = getTransactionTypeLabel(item.type, item.targetUlpId, item.ulpName);
+					const firstParty = item.firstParty || (item.type === 'INITIAL_STOCK' ? 'ULP' : 'UP3');
+					const secondParty = item.takerName || '-';
 
-		const colCount = excelRows[0].length;
+					if (item.items && item.items.length > 0) {
+						item.items.forEach((subItem: any) => {
+							excelRows.push([
+								idx++,
+								formattedDate,
+								item.referenceNumber,
+								trxType,
+								item.ulpName,
+								firstParty,
+								secondParty,
+								item.purpose || '-',
+								subItem.name,
+								subItem.quantity,
+								subItem.unit,
+								subItem.description || '-'
+							]);
+						});
+					} else {
+						excelRows.push([
+							idx++,
+							formattedDate,
+							item.referenceNumber,
+							trxType,
+							item.ulpName,
+							firstParty,
+							secondParty,
+							item.purpose || '-',
+							'-',
+							0,
+							'-',
+							'-'
+						]);
+					}
+				});
 
-		// Header Styling (Background Green `#107C41`, Text White, Bold)
-		const headerStyle = {
-			fill: {
-				patternType: 'solid',
-				fgColor: { rgb: '107C41' }
-			},
-			font: {
-				bold: true,
-				color: { rgb: 'FFFFFF' },
-				name: 'Calibri',
-				sz: 11
-			},
-			alignment: {
-				horizontal: 'center',
-				vertical: 'center',
-				wrapText: true
-			},
-			border: {
-				top: { style: 'thin', color: { rgb: 'CCCCCC' } },
-				bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
-				left: { style: 'thin', color: { rgb: 'CCCCCC' } },
-				right: { style: 'thin', color: { rgb: 'CCCCCC' } }
-			}
-		};
+				// Create workbook & worksheet
+				const wb = XLSX.utils.book_new();
+				const ws = XLSX.utils.aoa_to_sheet(excelRows);
 
-		// Apply Header style
-		for (let c = 0; c < colCount; c++) {
-			const cellRef = XLSX.utils.encode_cell({ r: 0, c: c });
-			if (ws[cellRef]) {
-				ws[cellRef].s = headerStyle;
-			}
-		}
-
-		// Apply Data cells style (Calibri 10, thin gray border, align helper)
-		const totalRows = excelRows.length;
-		for (let r = 1; r < totalRows; r++) {
-			for (let c = 0; c < colCount; c++) {
-				const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
-				if (ws[cellRef]) {
-					const isNumeric = typeof excelRows[r][c] === 'number';
-					ws[cellRef].s = {
-						font: {
-							name: 'Calibri',
-							sz: 10
-						},
-						alignment: {
-							horizontal: isNumeric ? 'right' : (c === 0 || c === 1 ? 'center' : 'left'),
-							vertical: 'center'
-						},
-						border: {
-							top: { style: 'thin', color: { rgb: 'E5E7EB' } },
-							bottom: { style: 'thin', color: { rgb: 'E5E7EB' } },
-							left: { style: 'thin', color: { rgb: 'E5E7EB' } },
-							right: { style: 'thin', color: { rgb: 'E5E7EB' } }
+				// Dynamic column widths calculation (prevent overlapping/text clipping)
+				const colWidths = excelRows[0].map((_, colIndex) => {
+					let maxLen = 10; // minimum fallback width
+					excelRows.forEach(row => {
+						const val = row[colIndex];
+						const len = val ? String(val).length : 0;
+						if (len > maxLen) {
+							maxLen = len;
 						}
-					};
+					});
+					return { wch: Math.min(maxLen + 4, 50) }; // cap width at 50 for readability
+				});
+				ws['!cols'] = colWidths;
+
+				const colCount = excelRows[0].length;
+
+				// Header Styling (Background Green `#107C41`, Text White, Bold)
+				const headerStyle = {
+					fill: {
+						patternType: 'solid',
+						fgColor: { rgb: '107C41' }
+					},
+					font: {
+						bold: true,
+						color: { rgb: 'FFFFFF' },
+						name: 'Calibri',
+						sz: 11
+					},
+					alignment: {
+						horizontal: 'center',
+						vertical: 'center',
+						wrapText: true
+					},
+					border: {
+						top: { style: 'thin', color: { rgb: 'CCCCCC' } },
+						bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
+						left: { style: 'thin', color: { rgb: 'CCCCCC' } },
+						right: { style: 'thin', color: { rgb: 'CCCCCC' } }
+					}
+				};
+
+				// Apply Header style
+				for (let c = 0; c < colCount; c++) {
+					const cellRef = XLSX.utils.encode_cell({ r: 0, c: c });
+					if (ws[cellRef]) {
+						ws[cellRef].s = headerStyle;
+					}
 				}
+
+				// Apply Data cells style (Calibri 10, thin gray border, align helper)
+				const totalRows = excelRows.length;
+				for (let r = 1; r < totalRows; r++) {
+					for (let c = 0; c < colCount; c++) {
+						const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
+						if (ws[cellRef]) {
+							const isNumeric = typeof excelRows[r][c] === 'number';
+							ws[cellRef].s = {
+								font: {
+									name: 'Calibri',
+									sz: 10
+								},
+								alignment: {
+									horizontal: isNumeric ? 'right' : (c === 0 || c === 1 ? 'center' : 'left'),
+									vertical: 'center'
+								},
+								border: {
+									top: { style: 'thin', color: { rgb: 'E5E7EB' } },
+									bottom: { style: 'thin', color: { rgb: 'E5E7EB' } },
+									left: { style: 'thin', color: { rgb: 'E5E7EB' } },
+									right: { style: 'thin', color: { rgb: 'E5E7EB' } }
+								}
+							};
+						}
+					}
+				}
+
+				// Save Worksheet to Workbook
+				XLSX.utils.book_append_sheet(wb, ws, 'Data Transaksi');
+
+				// File Name Configuration
+				const typeStr = selectedType.toLowerCase().replace(/_/g, '-');
+				const filename = `Export_Laporan_${typeStr}_${startDate}_sd_${endDate}.xlsx`;
+				XLSX.writeFile(wb, filename);
+			} catch (err) {
+				console.error('Export failed:', err);
+			} finally {
+				loadingState.stop();
 			}
-		}
-
-		// Save Worksheet to Workbook
-		XLSX.utils.book_append_sheet(wb, ws, 'Data Transaksi');
-
-		// File Name Configuration
-		const typeStr = selectedType.toLowerCase().replace(/_/g, '-');
-		const filename = `Export_Laporan_${typeStr}_${startDate}_sd_${endDate}.xlsx`;
-		XLSX.writeFile(wb, filename);
+		}, 100);
 	}
 </script>
 

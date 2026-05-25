@@ -1,11 +1,31 @@
 <script lang="ts">
 	import './layout.css';
-	import { page } from '$app/stores';
+	import { page, navigating } from '$app/stores';
 	import favicon from '$lib/assets/favicon.svg';
+	import { fade } from 'svelte/transition';
 
 	let { children, data } = $props();
 	
 	let isBlankPage = $derived($page.url.pathname === '/login' || $page.url.pathname.startsWith('/validasi'));
+
+	// Simple dark flash on navigation — shows for max 1.5 seconds then auto-hides
+	let showNavFlash = $state(false);
+	let flashTimer: ReturnType<typeof setTimeout> | null = null;
+
+	$effect(() => {
+		if ($navigating) {
+			showNavFlash = true;
+			if (flashTimer) clearTimeout(flashTimer);
+			// Auto-dismiss after 1.5s — no more waiting for slow server
+			flashTimer = setTimeout(() => {
+				showNavFlash = false;
+			}, 1500);
+		} else {
+			// Navigation done — hide quickly
+			if (flashTimer) clearTimeout(flashTimer);
+			showNavFlash = false;
+		}
+	});
 </script>
 
 <svelte:head>
@@ -125,4 +145,9 @@
 			</div>
 		</div>
 	</div>
+{/if}
+
+{#if showNavFlash}
+	<!-- Simple dark flash overlay on page navigation - auto-dismisses in 1.5s -->
+	<div transition:fade={{ duration: 120 }} class="fixed inset-0 z-[9999] bg-black/25 pointer-events-none"></div>
 {/if}

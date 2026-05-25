@@ -1,5 +1,6 @@
 <script lang="ts">
 	import XLSX from 'xlsx-js-style';
+	import { loadingState } from '$lib/loadingState.svelte';
 	
 	let { data } = $props();
 	let activeTab = $state(data.activeTab || 'MUTASI'); // MUTASI | PEMAKAIAN
@@ -14,235 +15,246 @@
 	}
 
 	function handleDownload() {
-		if (activeTab === 'MUTASI') {
-			const filename = `Laporan_Mutasi_${data.selectedUlpId}_${data.startDate}_sd_${data.endDate}.xlsx`;
-			const excelRows: any[][] = [];
+		loadingState.start('Mengunduh Data Excel...', 3000);
 
-			// Header Row
-			excelRows.push([
-				'No',
-				'Material',
-				'Satuan',
-				'Stok Awal',
-				'Masuk (+)',
-				'Keluar (-)',
-				'Stok Akhir'
-			]);
+		// Use setTimeout so the UI can draw the loader spinner first
+		setTimeout(() => {
+			try {
+				if (activeTab === 'MUTASI') {
+					const filename = `Laporan_Mutasi_${data.selectedUlpId}_${data.startDate}_sd_${data.endDate}.xlsx`;
+					const excelRows: any[][] = [];
 
-			data.reportData.forEach((item, i) => {
-				excelRows.push([
-					i + 1,
-					item.name,
-					item.unit,
-					item.awal,
-					item.masuk,
-					item.keluar,
-					item.akhir
-				]);
-			});
+					// Header Row
+					excelRows.push([
+						'No',
+						'Material',
+						'Satuan',
+						'Stok Awal',
+						'Masuk (+)',
+						'Keluar (-)',
+						'Stok Akhir'
+					]);
 
-			// Create workbook & worksheet
-			const wb = XLSX.utils.book_new();
-			const ws = XLSX.utils.aoa_to_sheet(excelRows);
+					data.reportData.forEach((item, i) => {
+						excelRows.push([
+							i + 1,
+							item.name,
+							item.unit,
+							item.awal,
+							item.masuk,
+							item.keluar,
+							item.akhir
+						]);
+					});
 
-			// Dynamic column widths calculation (prevent overlapping/text clipping)
-			const colWidths = excelRows[0].map((_, colIndex) => {
-				let maxLen = 10; // minimum fallback width
-				excelRows.forEach(row => {
-					const val = row[colIndex];
-					const len = val ? String(val).length : 0;
-					if (len > maxLen) {
-						maxLen = len;
-					}
-				});
-				return { wch: Math.min(maxLen + 4, 50) };
-			});
-			ws['!cols'] = colWidths;
+					// Create workbook & worksheet
+					const wb = XLSX.utils.book_new();
+					const ws = XLSX.utils.aoa_to_sheet(excelRows);
 
-			const colCount = excelRows[0].length;
-
-			// Header Styling (Background Green `#107C41`, Text White, Bold)
-			const headerStyle = {
-				fill: {
-					patternType: 'solid',
-					fgColor: { rgb: '107C41' }
-				},
-				font: {
-					bold: true,
-					color: { rgb: 'FFFFFF' },
-					name: 'Calibri',
-					sz: 11
-				},
-				alignment: {
-					horizontal: 'center',
-					vertical: 'center',
-					wrapText: true
-				},
-				border: {
-					top: { style: 'thin', color: { rgb: 'CCCCCC' } },
-					bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
-					left: { style: 'thin', color: { rgb: 'CCCCCC' } },
-					right: { style: 'thin', color: { rgb: 'CCCCCC' } }
-				}
-			};
-
-			// Apply Header style
-			for (let c = 0; c < colCount; c++) {
-				const cellRef = XLSX.utils.encode_cell({ r: 0, c: c });
-				if (ws[cellRef]) {
-					ws[cellRef].s = headerStyle;
-				}
-			}
-
-			// Apply Data cells style (Calibri 10, thin gray border)
-			const totalRows = excelRows.length;
-			for (let r = 1; r < totalRows; r++) {
-				for (let c = 0; c < colCount; c++) {
-					const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
-					if (ws[cellRef]) {
-						const isNumeric = typeof excelRows[r][c] === 'number';
-						ws[cellRef].s = {
-							font: {
-								name: 'Calibri',
-								sz: 10
-							},
-							alignment: {
-								horizontal: isNumeric ? 'right' : (c === 0 || c === 2 ? 'center' : 'left'),
-								vertical: 'center'
-							},
-							border: {
-								top: { style: 'thin', color: { rgb: 'E5E7EB' } },
-								bottom: { style: 'thin', color: { rgb: 'E5E7EB' } },
-								left: { style: 'thin', color: { rgb: 'E5E7EB' } },
-								right: { style: 'thin', color: { rgb: 'E5E7EB' } }
+					// Dynamic column widths calculation (prevent overlapping/text clipping)
+					const colWidths = excelRows[0].map((_, colIndex) => {
+						let maxLen = 10; // minimum fallback width
+						excelRows.forEach(row => {
+							const val = row[colIndex];
+							const len = val ? String(val).length : 0;
+							if (len > maxLen) {
+								maxLen = len;
 							}
-						};
+						});
+						return { wch: Math.min(maxLen + 4, 50) };
+					});
+					ws['!cols'] = colWidths;
+
+					const colCount = excelRows[0].length;
+
+					// Header Styling (Background Green `#107C41`, Text White, Bold)
+					const headerStyle = {
+						fill: {
+							patternType: 'solid',
+							fgColor: { rgb: '107C41' }
+						},
+						font: {
+							bold: true,
+							color: { rgb: 'FFFFFF' },
+							name: 'Calibri',
+							sz: 11
+						},
+						alignment: {
+							horizontal: 'center',
+							vertical: 'center',
+							wrapText: true
+						},
+						border: {
+							top: { style: 'thin', color: { rgb: 'CCCCCC' } },
+							bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
+							left: { style: 'thin', color: { rgb: 'CCCCCC' } },
+							right: { style: 'thin', color: { rgb: 'CCCCCC' } }
+						}
+					};
+
+					// Apply Header style
+					for (let c = 0; c < colCount; c++) {
+						const cellRef = XLSX.utils.encode_cell({ r: 0, c: c });
+						if (ws[cellRef]) {
+							ws[cellRef].s = headerStyle;
+						}
 					}
-				}
-			}
 
-			XLSX.utils.book_append_sheet(wb, ws, 'Laporan Mutasi');
-			XLSX.writeFile(wb, filename);
-		} else {
-			// Download Monthly Usage Trend
-			const filename = `Tren_Pemakaian_${data.selectedUlpId}_Tahun_${data.currentYear}.xlsx`;
-			const excelRows: any[][] = [];
-
-			// Header Row
-			excelRows.push([
-				'No',
-				'Material',
-				'Satuan',
-				'Jan',
-				'Feb',
-				'Mar',
-				'Apr',
-				'Mei',
-				'Jun',
-				'Jul',
-				'Agt',
-				'Sep',
-				'Okt',
-				'Nov',
-				'Des',
-				'Total',
-				'Rata-rata/Bulan'
-			]);
-
-			data.monthlyUsageData.forEach((item, i) => {
-				excelRows.push([
-					i + 1,
-					item.name,
-					item.unit,
-					...item.months,
-					item.total,
-					item.avg
-				]);
-			});
-
-			// Create workbook & worksheet
-			const wb = XLSX.utils.book_new();
-			const ws = XLSX.utils.aoa_to_sheet(excelRows);
-
-			// Dynamic column widths calculation (prevent overlapping/text clipping)
-			const colWidths = excelRows[0].map((_, colIndex) => {
-				let maxLen = 6; // lower min fallback for month columns
-				excelRows.forEach(row => {
-					const val = row[colIndex];
-					const len = val ? String(val).length : 0;
-					if (len > maxLen) {
-						maxLen = len;
-					}
-				});
-				return { wch: Math.min(maxLen + 4, 50) };
-			});
-			ws['!cols'] = colWidths;
-
-			const colCount = excelRows[0].length;
-
-			// Header Styling (Background Green `#107C41`, Text White, Bold)
-			const headerStyle = {
-				fill: {
-					patternType: 'solid',
-					fgColor: { rgb: '107C41' }
-				},
-				font: {
-					bold: true,
-					color: { rgb: 'FFFFFF' },
-					name: 'Calibri',
-					sz: 11
-				},
-				alignment: {
-					horizontal: 'center',
-					vertical: 'center',
-					wrapText: true
-				},
-				border: {
-					top: { style: 'thin', color: { rgb: 'CCCCCC' } },
-					bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
-					left: { style: 'thin', color: { rgb: 'CCCCCC' } },
-					right: { style: 'thin', color: { rgb: 'CCCCCC' } }
-				}
-			};
-
-			// Apply Header style
-			for (let c = 0; c < colCount; c++) {
-				const cellRef = XLSX.utils.encode_cell({ r: 0, c: c });
-				if (ws[cellRef]) {
-					ws[cellRef].s = headerStyle;
-				}
-			}
-
-			// Apply Data cells style (Calibri 10, thin gray border)
-			const totalRows = excelRows.length;
-			for (let r = 1; r < totalRows; r++) {
-				for (let c = 0; c < colCount; c++) {
-					const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
-					if (ws[cellRef]) {
-						const isNumeric = typeof excelRows[r][c] === 'number';
-						ws[cellRef].s = {
-							font: {
-								name: 'Calibri',
-								sz: 10
-							},
-							alignment: {
-								horizontal: isNumeric ? 'right' : (c === 0 || c === 2 ? 'center' : 'left'),
-								vertical: 'center'
-							},
-							border: {
-								top: { style: 'thin', color: { rgb: 'E5E7EB' } },
-								bottom: { style: 'thin', color: { rgb: 'E5E7EB' } },
-								left: { style: 'thin', color: { rgb: 'E5E7EB' } },
-								right: { style: 'thin', color: { rgb: 'E5E7EB' } }
+					// Apply Data cells style (Calibri 10, thin gray border)
+					const totalRows = excelRows.length;
+					for (let r = 1; r < totalRows; r++) {
+						for (let c = 0; c < colCount; c++) {
+							const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
+							if (ws[cellRef]) {
+								const isNumeric = typeof excelRows[r][c] === 'number';
+								ws[cellRef].s = {
+									font: {
+										name: 'Calibri',
+										sz: 10
+									},
+									alignment: {
+										horizontal: isNumeric ? 'right' : (c === 0 || c === 2 ? 'center' : 'left'),
+										vertical: 'center'
+									},
+									border: {
+										top: { style: 'thin', color: { rgb: 'E5E7EB' } },
+										bottom: { style: 'thin', color: { rgb: 'E5E7EB' } },
+										left: { style: 'thin', color: { rgb: 'E5E7EB' } },
+										right: { style: 'thin', color: { rgb: 'E5E7EB' } }
+									}
+								};
 							}
-						};
+						}
 					}
-				}
-			}
 
-			XLSX.utils.book_append_sheet(wb, ws, 'Tren Pemakaian');
-			XLSX.writeFile(wb, filename);
-		}
+					XLSX.utils.book_append_sheet(wb, ws, 'Laporan Mutasi');
+					XLSX.writeFile(wb, filename);
+				} else {
+					// Download Monthly Usage Trend
+					const filename = `Tren_Pemakaian_${data.selectedUlpId}_Tahun_${data.currentYear}.xlsx`;
+					const excelRows: any[][] = [];
+
+					// Header Row
+					excelRows.push([
+						'No',
+						'Material',
+						'Satuan',
+						'Jan',
+						'Feb',
+						'Mar',
+						'Apr',
+						'Mei',
+						'Jun',
+						'Jul',
+						'Agt',
+						'Sep',
+						'Okt',
+						'Nov',
+						'Des',
+						'Total',
+						'Rata-rata/Bulan'
+					]);
+
+					data.monthlyUsageData.forEach((item, i) => {
+						excelRows.push([
+							i + 1,
+							item.name,
+							item.unit,
+							...item.months,
+							item.total,
+							item.avg
+						]);
+					});
+
+					// Create workbook & worksheet
+					const wb = XLSX.utils.book_new();
+					const ws = XLSX.utils.aoa_to_sheet(excelRows);
+
+					// Dynamic column widths calculation (prevent overlapping/text clipping)
+					const colWidths = excelRows[0].map((_, colIndex) => {
+						let maxLen = 6; // lower min fallback for month columns
+						excelRows.forEach(row => {
+							const val = row[colIndex];
+							const len = val ? String(val).length : 0;
+							if (len > maxLen) {
+								maxLen = len;
+							}
+						});
+						return { wch: Math.min(maxLen + 4, 50) };
+					});
+					ws['!cols'] = colWidths;
+
+					const colCount = excelRows[0].length;
+
+					// Header Styling (Background Green `#107C41`, Text White, Bold)
+					const headerStyle = {
+						fill: {
+							patternType: 'solid',
+							fgColor: { rgb: '107C41' }
+						},
+						font: {
+							bold: true,
+							color: { rgb: 'FFFFFF' },
+							name: 'Calibri',
+							sz: 11
+						},
+						alignment: {
+							horizontal: 'center',
+							vertical: 'center',
+							wrapText: true
+						},
+						border: {
+							top: { style: 'thin', color: { rgb: 'CCCCCC' } },
+							bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
+							left: { style: 'thin', color: { rgb: 'CCCCCC' } },
+							right: { style: 'thin', color: { rgb: 'CCCCCC' } }
+						}
+					};
+
+					// Apply Header style
+					for (let c = 0; c < colCount; c++) {
+						const cellRef = XLSX.utils.encode_cell({ r: 0, c: c });
+						if (ws[cellRef]) {
+							ws[cellRef].s = headerStyle;
+						}
+					}
+
+					// Apply Data cells style (Calibri 10, thin gray border)
+					const totalRows = excelRows.length;
+					for (let r = 1; r < totalRows; r++) {
+						for (let c = 0; c < colCount; c++) {
+							const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
+							if (ws[cellRef]) {
+								const isNumeric = typeof excelRows[r][c] === 'number';
+								ws[cellRef].s = {
+									font: {
+										name: 'Calibri',
+										sz: 10
+									},
+									alignment: {
+										horizontal: isNumeric ? 'right' : (c === 0 || c === 2 ? 'center' : 'left'),
+										vertical: 'center'
+									},
+									border: {
+										top: { style: 'thin', color: { rgb: 'E5E7EB' } },
+										bottom: { style: 'thin', color: { rgb: 'E5E7EB' } },
+										left: { style: 'thin', color: { rgb: 'E5E7EB' } },
+										right: { style: 'thin', color: { rgb: 'E5E7EB' } }
+									}
+								};
+							}
+						}
+					}
+
+					XLSX.utils.book_append_sheet(wb, ws, 'Tren Pemakaian');
+					XLSX.writeFile(wb, filename);
+				}
+			} catch (err) {
+				console.error('Download failed:', err);
+			} finally {
+				loadingState.stop();
+			}
+		}, 100);
 	}
 </script>
 
