@@ -31,24 +31,67 @@
 <svelte:head>
 	<title>BAST Mutasi - {data.trx.ref}</title>
 	<style>
+		/* Force A4 paper size when printing */
+		@page {
+			size: A4 portrait;
+			margin: 0;
+		}
+
 		@media print {
-			body { background-color: white !important; font-family: 'Times New Roman', Times, serif; }
+			/* Hide toolbar */
 			.no-print { display: none !important; }
-			.print-container { padding: 0 !important; margin: 0 !important; box-shadow: none !important; max-width: none !important; }
+
+			/* Remove background gray from page wrapper */
+			.bast-page-bg {
+				background: white !important;
+				padding: 0 !important;
+				min-height: unset !important;
+			}
+
+			/* Each print-container = exactly one A4 page */
+			.print-container {
+				box-shadow: none !important;
+				width: 210mm !important;
+				max-width: 210mm !important;
+				margin: 0 auto !important;
+				min-height: unset !important;
+				/* Keep padding so content has margins */
+				padding: 15mm 20mm !important;
+			}
+
+			/* Photo page has its own padding */
+			.print-container.foto-page {
+				padding: 15mm 20mm !important;
+			}
+
 			.page-break { page-break-before: always; }
+
+			/* Keep signature block together — never split across pages */
+			.ttd-block {
+				page-break-inside: avoid !important;
+				break-inside: avoid !important;
+			}
+
+			body { background-color: white !important; }
 			* { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
 		}
-		
-		/* Arial or Times New Roman is usually standard for documents. The image uses an Arial/Helvetica look */
+
 		.doc-font {
 			font-family: Arial, Helvetica, sans-serif;
 			font-size: 13px;
 			color: black;
 		}
+
+		/* Screen-only padding for preview look */
+		@media screen {
+			.print-container {
+				padding: 15mm 20mm;
+			}
+		}
 	</style>
 </svelte:head>
 
-<div class="bg-gray-200 min-h-screen pb-10">
+<div id="bast-print-root" class="bast-page-bg bg-gray-200 min-h-screen pb-10">
 	<div class="w-full no-print flex justify-center sticky top-0 z-50 shadow-md p-4 bg-white/90 backdrop-blur mb-10">
 		<button onclick={printDoc} class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg flex items-center">
 			<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
@@ -60,7 +103,7 @@
 	</div>
 
 <!-- KERTAS HALAMAN 1: BAST -->
-<div class="max-w-[210mm] mx-auto bg-white shadow-2xl p-[15mm_20mm_20mm_20mm] print-container text-black doc-font relative" style="min-height: 297mm">
+<div class="max-w-[210mm] mx-auto bg-white shadow-2xl print-container text-black doc-font relative">
 	
 	<!-- Header / Kop -->
 	<div class="flex items-start mb-6">
@@ -148,12 +191,12 @@
 	</table>
 
 	<!-- Kalimat Penutup -->
-	<div class="mb-12 leading-relaxed">
+	<div class="mb-6 leading-relaxed">
 		Demikian Berita Acara Serah Terima ini kami buat untuk dipergunakan sebagaimana mestinya
 	</div>
 
 	<!-- Tanda Tangan -->
-	<div class="flex justify-between items-start text-center mb-8 px-4 font-['Arial',sans-serif]">
+	<div class="ttd-block flex justify-between items-start text-center mb-8 px-4 font-['Arial',sans-serif]">
 		<!-- TTD Pihak 1 -->
 		<div class="w-64 flex flex-col h-[220px]">
 			<div>
@@ -196,7 +239,7 @@
 
 <!-- KERTAS HALAMAN 2: DOKUMENTASI (Page Break) -->
 {#if data.trx.photo}
-<div class="max-w-[210mm] mx-auto bg-white shadow-2xl p-[20mm] print-container text-black doc-font mt-8 page-break" style="min-height: 297mm">
+<div class="max-w-[210mm] mx-auto bg-white shadow-2xl print-container text-black doc-font mt-8 page-break foto-page">
 	<h3 class="font-bold text-[15px] mb-8 uppercase">DOKUMENTASI PERALATAN</h3>
 	
 	<div class="w-full flex justify-center">

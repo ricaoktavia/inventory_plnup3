@@ -6,7 +6,7 @@
 
 	let { children, data } = $props();
 	
-	let isBlankPage = $derived($page.url.pathname === '/login' || $page.url.pathname.startsWith('/validasi'));
+	let isBlankPage = $derived($page.url.pathname === '/login' || $page.url.pathname.startsWith('/validasi') || $page.url.pathname.endsWith('/bast'));
 
 	// Simple dark flash on navigation — shows for max 1.5 seconds then auto-hides
 	let showNavFlash = $state(false);

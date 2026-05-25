@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
-import { materials, transactions, transactionDetails, ulps } from '$lib/server/db/schema';
-import { eq, and, lte, gte, lt, or, isNull, sum, sql } from 'drizzle-orm';
+import { materials, transactions, transactionDetails, ulps, stocks } from '$lib/server/db/schema';
+import { eq, and, lte, gte, lt, gt, or, isNull, sum, sql } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -31,64 +31,61 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	const reportData = [];
 
-	let beforeRows = [];
+	// Fetch current stocks to anchor calculations
+	const currentStocks = await db.select()
+		.from(stocks)
+		.where(selectedUlpId === 'up3' ? isNull(stocks.ulpId) : eq(stocks.ulpId, parseInt(selectedUlpId)));
+	
+	const currentStockMap = new Map();
+	currentStocks.forEach(row => {
+		currentStockMap.set(row.materialId, Number(row.quantity || 0));
+	});
+
 	let periodRows = [];
+	let afterRows = [];
 
 	if (selectedUlpId === 'up3') {
 		// UP3 Logic
-		beforeRows = await db.select({
-			materialId: transactionDetails.materialId,
-			incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' OR (${transactions.type} = 'INITIAL_STOCK' AND ${transactions.targetUlpId} IS NULL) THEN ${transactionDetails.quantity} ELSE 0 END)`,
-			outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' THEN ${transactionDetails.quantity} ELSE 0 END)`
-		})
-		.from(transactions)
-		.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
-		.where(and(
-			eq(transactions.status, 'COMPLETED'),
-			or(
-				lt(transactions.createdAt, start),
-				eq(transactions.type, 'INITIAL_STOCK')
-			)
-		))
-		.groupBy(transactionDetails.materialId);
-
 		periodRows = await db.select({
 			materialId: transactionDetails.materialId,
-			incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-			outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' THEN ${transactionDetails.quantity} ELSE 0 END)`
+			// INCOMING + INITIAL_STOCK both count as incoming for UP3
+			incoming: sql<number>`SUM(CASE WHEN ${transactions.type} IN ('INCOMING', 'INITIAL_STOCK') THEN ${transactionDetails.quantity} ELSE 0 END)`,
+			// DISTRIBUTION + USAGE (field usage by UP3) both count as outgoing for UP3
+			outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} IN ('DISTRIBUTION', 'USAGE') THEN ${transactionDetails.quantity} ELSE 0 END)`
 		})
 		.from(transactions)
 		.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
 		.where(and(
 			gte(transactions.createdAt, start),
 			lte(transactions.createdAt, end),
-			eq(transactions.status, 'COMPLETED')
+			eq(transactions.status, 'COMPLETED'),
+			sql`${transactions.targetUlpId} IS NULL`
+		))
+		.groupBy(transactionDetails.materialId);
+
+		afterRows = await db.select({
+			materialId: transactionDetails.materialId,
+			// INCOMING + INITIAL_STOCK both count as incoming for UP3
+			incoming: sql<number>`SUM(CASE WHEN ${transactions.type} IN ('INCOMING', 'INITIAL_STOCK') THEN ${transactionDetails.quantity} ELSE 0 END)`,
+			// DISTRIBUTION + USAGE (field usage by UP3) both count as outgoing for UP3
+			outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} IN ('DISTRIBUTION', 'USAGE') THEN ${transactionDetails.quantity} ELSE 0 END)`
+		})
+		.from(transactions)
+		.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
+		.where(and(
+			gt(transactions.createdAt, end),
+			eq(transactions.status, 'COMPLETED'),
+			sql`${transactions.targetUlpId} IS NULL`
 		))
 		.groupBy(transactionDetails.materialId);
 	} else {
 		// ULP Logic
 		const ulpId = parseInt(selectedUlpId as string);
 
-		beforeRows = await db.select({
-			materialId: transactionDetails.materialId,
-			incoming: sql<number>`SUM(CASE WHEN ${transactions.type} IN ('DISTRIBUTION', 'INITIAL_STOCK') THEN ${transactionDetails.quantity} ELSE 0 END)`,
-			outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' THEN ${transactionDetails.quantity} ELSE 0 END)`
-		})
-		.from(transactions)
-		.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
-		.where(and(
-			eq(transactions.status, 'COMPLETED'),
-			eq(transactions.targetUlpId, ulpId),
-			or(
-				lt(transactions.createdAt, start),
-				eq(transactions.type, 'INITIAL_STOCK')
-			)
-		))
-		.groupBy(transactionDetails.materialId);
-
 		periodRows = await db.select({
 			materialId: transactionDetails.materialId,
-			incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' THEN ${transactionDetails.quantity} ELSE 0 END)`,
+			// DISTRIBUTION + INITIAL_STOCK (confirmed by UP3) both count as incoming for ULP
+			incoming: sql<number>`SUM(CASE WHEN ${transactions.type} IN ('DISTRIBUTION', 'INITIAL_STOCK') THEN ${transactionDetails.quantity} ELSE 0 END)`,
 			outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' THEN ${transactionDetails.quantity} ELSE 0 END)`
 		})
 		.from(transactions)
@@ -100,15 +97,22 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			eq(transactions.targetUlpId, ulpId)
 		))
 		.groupBy(transactionDetails.materialId);
-	}
 
-	const beforeMap = new Map();
-	beforeRows.forEach(row => {
-		beforeMap.set(row.materialId, {
-			incoming: Number(row.incoming || 0),
-			outgoing: Number(row.outgoing || 0)
-		});
-	});
+		afterRows = await db.select({
+			materialId: transactionDetails.materialId,
+			// DISTRIBUTION + INITIAL_STOCK (confirmed by UP3) both count as incoming for ULP
+			incoming: sql<number>`SUM(CASE WHEN ${transactions.type} IN ('DISTRIBUTION', 'INITIAL_STOCK') THEN ${transactionDetails.quantity} ELSE 0 END)`,
+			outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' THEN ${transactionDetails.quantity} ELSE 0 END)`
+		})
+		.from(transactions)
+		.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
+		.where(and(
+			gt(transactions.createdAt, end),
+			eq(transactions.status, 'COMPLETED'),
+			eq(transactions.targetUlpId, ulpId)
+		))
+		.groupBy(transactionDetails.materialId);
+	}
 
 	const periodMap = new Map();
 	periodRows.forEach(row => {
@@ -118,14 +122,23 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		});
 	});
 
-	for (const mat of allMaterials) {
-		const before = beforeMap.get(mat.id) || { incoming: 0, outgoing: 0 };
-		const period = periodMap.get(mat.id) || { incoming: 0, outgoing: 0 };
+	const afterMap = new Map();
+	afterRows.forEach(row => {
+		afterMap.set(row.materialId, {
+			incoming: Number(row.incoming || 0),
+			outgoing: Number(row.outgoing || 0)
+		});
+	});
 
-		const awal = before.incoming - before.outgoing;
+	for (const mat of allMaterials) {
+		const currentStock = currentStockMap.get(mat.id) || 0;
+		const period = periodMap.get(mat.id) || { incoming: 0, outgoing: 0 };
+		const after = afterMap.get(mat.id) || { incoming: 0, outgoing: 0 };
+
+		const akhir = currentStock - after.incoming + after.outgoing;
 		const masuk = period.incoming;
 		const keluar = period.outgoing;
-		const akhir = awal + masuk - keluar;
+		const awal = akhir - masuk + keluar;
 
 		// Only include materials that have some activity or balance
 		if (awal !== 0 || masuk !== 0 || keluar !== 0 || akhir !== 0) {

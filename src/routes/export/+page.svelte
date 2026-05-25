@@ -15,7 +15,10 @@
 
 	// Helper for label display
 	function getTransactionTypeLabel(type: string, targetUlpId: number | null, ulpName: string) {
-		if (type === 'INITIAL_STOCK') return 'Stok Awal';
+		if (type === 'INITIAL_STOCK') {
+			if (!targetUlpId) return 'Stok Awal UP3';
+			return 'Stok Awal ULP';
+		}
 		if (type === 'DISTRIBUTION') return 'Transfer Material';
 		if (type === 'USAGE') {
 			if (!targetUlpId || ulpName === 'Pusat UP3') {
@@ -50,6 +53,12 @@
 			}
 			if (selectedType === 'INITIAL_STOCK') {
 				return item.type === 'INITIAL_STOCK';
+			}
+			if (selectedType === 'INITIAL_STOCK_UP3') {
+				return item.type === 'INITIAL_STOCK' && !item.targetUlpId;
+			}
+			if (selectedType === 'INITIAL_STOCK_ULP') {
+				return item.type === 'INITIAL_STOCK' && !!item.targetUlpId;
 			}
 
 			return true;
@@ -269,7 +278,10 @@
 						<option value="USAGE_UP3">Pemakaian UP3 (Gudang Pusat &rarr; Lapangan)</option>
 					{/if}
 					<option value="USAGE_ULP">Pemakaian ULP (Gudang ULP &rarr; Lapangan)</option>
-					<option value="INITIAL_STOCK">Stok Awal ULP</option>
+					{#if data.userRole === 'ADMIN_UP3'}
+						<option value="INITIAL_STOCK_UP3">Stok Awal Gudang Pusat (UP3)</option>
+					{/if}
+					<option value="INITIAL_STOCK_ULP">Stok Awal Gudang ULP</option>
 				</select>
 			</div>
 
