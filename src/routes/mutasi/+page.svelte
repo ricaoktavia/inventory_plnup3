@@ -125,14 +125,37 @@
 	}
 
 	// Dynamic Materials Array State
-	let materialRows = $state([{ materialId: '', jumlah: '', keterangan: '' }]);
+	let materialRows = $state([{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]);
 
 	function addMaterialRow() {
-		materialRows = [...materialRows, { materialId: '', jumlah: '', keterangan: '' }];
+		materialRows = [...materialRows, { materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }];
 	}
 
 	function removeMaterialRow(index: number) {
 		materialRows = materialRows.filter((_, i) => i !== index);
+	}
+
+	function getFilteredMaterials(searchQuery: string, materialId: string, list: any[]) {
+		const selectedMat = list.find(m => m.id.toString() === materialId);
+		if (!searchQuery || (selectedMat && searchQuery === selectedMat.name)) {
+			return list;
+		}
+		const query = searchQuery.toLowerCase();
+		return list.filter(m => m.name.toLowerCase().includes(query));
+	}
+
+	function handleBlur(row: any, list: any[]) {
+		setTimeout(() => {
+			row.showDropdown = false;
+			const matched = list.find(m => m.name === row.searchQuery);
+			if (matched) {
+				row.materialId = matched.id.toString();
+				row.searchQuery = matched.name;
+			} else {
+				row.materialId = '';
+				row.searchQuery = '';
+			}
+		}, 200);
 	}
 
 	// Tabs for ULP & UP3
@@ -166,15 +189,20 @@
 
 		if (val && reqData) {
 			if (reqData.items && reqData.items.length > 0) {
-				materialRows = reqData.items.map((item: any) => ({
-					materialId: item.materialId.toString(),
-					jumlah: item.jumlah,
-					keterangan: item.keterangan || ''
-				}));
+				materialRows = reqData.items.map((item: any) => {
+					const mat = data.materials.find((m: any) => m.id.toString() === item.materialId.toString());
+					return {
+						materialId: item.materialId.toString(),
+						jumlah: item.jumlah,
+						keterangan: item.keterangan || '',
+						searchQuery: mat ? mat.name : '',
+						showDropdown: false
+					};
+				});
 			}
 			up3TakerName = reqData.takerName || '';
 		} else if (val === '') {
-			materialRows = [{ materialId: '', jumlah: '', keterangan: '' }];
+			materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }];
 			up3TakerName = '';
 			up3FirstParty = '';
 		}
@@ -209,14 +237,14 @@
 
 			{#if data.userRole === 'ADMIN_UP3'}
 				<div class="flex border-b border-gray-200 mb-6 bg-gray-50 p-1 rounded-t-lg">
-					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'TRANSFER' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { up3ActiveTab = 'TRANSFER'; materialRows = [{ materialId: '', jumlah: '', keterangan: '' }]; selectedRequestId = ''; }}>
+					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'TRANSFER' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { up3ActiveTab = 'TRANSFER'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; selectedRequestId = ''; }}>
 						TRANSFER MATERIAL
 					</button>
-					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'PEMAKAIAN' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { up3ActiveTab = 'PEMAKAIAN'; materialRows = [{ materialId: '', jumlah: '', keterangan: '' }]; }}>
+					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'PEMAKAIAN' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { up3ActiveTab = 'PEMAKAIAN'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; }}>
 						PEMAKAIAN LAPANGAN
 					</button>
 					{#if data.materials.filter(m => !m.hasStockRecord).length > 0 || up3ActiveTab === 'STOK_AWAL'}
-						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'STOK_AWAL' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { up3ActiveTab = 'STOK_AWAL'; materialRows = [{ materialId: '', jumlah: '', keterangan: '' }]; }}>
+						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'STOK_AWAL' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { up3ActiveTab = 'STOK_AWAL'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; }}>
 							INPUT STOK AWAL
 						</button>
 					{/if}
@@ -295,19 +323,43 @@
 									<button type="button" onclick={() => removeMaterialRow(i)} class="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-full shadow hover:bg-red-600 transition-colors z-20">
 										<span class="text-[10px]">✕</span>
 									</button>
-									<select 
-										name="materialId[]" 
-										bind:value={row.materialId}
-										required 
-										class="block w-full border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-cyan-500 font-bold"
-									>
-										<option value="">Pilih Material...</option>
-										{#each data.materials as mat}
-											<option value={mat.id.toString()} disabled={mat.stock <= 0}>
-												{mat.name} ({mat.unit}) — STOK: {mat.stock}
-											</option>
-										{/each}
-									</select>
+									<div class="relative w-full">
+										<input type="hidden" name="materialId[]" value={row.materialId} />
+										<input 
+											type="text"
+											placeholder="Pilih/Ketik Material..."
+											bind:value={row.searchQuery}
+											onfocus={() => { row.showDropdown = true; }}
+											onblur={() => handleBlur(row, data.materials)}
+											required
+											class="block w-full border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-cyan-500 font-bold bg-white"
+										/>
+										{#if row.showDropdown}
+											<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
+												{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials).length === 0}
+													<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
+												{:else}
+													{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials) as mat}
+														{@const isDisabled = mat.stock <= 0}
+														<button
+															type="button"
+															disabled={isDisabled}
+															onmousedown={(e) => {
+																e.preventDefault();
+																row.materialId = mat.id.toString();
+																row.searchQuery = mat.name;
+																row.showDropdown = false;
+															}}
+															class="w-full text-left px-3 py-2 hover:bg-cyan-50 text-[#0A417A] font-bold flex justify-between items-center transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+														>
+															<span class="truncate pr-2">{mat.name} ({mat.unit})</span>
+															<span class="text-[10px] text-gray-400 shrink-0">STOK: {mat.stock}</span>
+														</button>
+													{/each}
+												{/if}
+											</div>
+										{/if}
+									</div>
 									<div class="flex gap-2">
 										<div class="relative w-20">
 											<input 
@@ -428,19 +480,43 @@
 												<!-- Material Select -->
 												<div>
 													<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Pilih Material</label>
-													<select 
-														name="materialId[]" 
-														bind:value={row.materialId}
-														required 
-														class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] cursor-pointer focus:border-cyan-500 py-1 transition-colors"
-													>
-														<option value="">Pilih Material...</option>
-														{#each data.materials as mat}
-															<option value={mat.id.toString()} disabled={mat.stock <= 0}>
-																{mat.name} ({mat.unit}) — [SISA: {mat.stock}]
-															</option>
-														{/each}
-													</select>
+													<div class="relative w-full">
+														<input type="hidden" name="materialId[]" value={row.materialId} />
+														<input 
+															type="text"
+															placeholder="Pilih/Ketik Material..."
+															bind:value={row.searchQuery}
+															onfocus={() => { row.showDropdown = true; }}
+															onblur={() => handleBlur(row, data.materials)}
+															required
+															class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] focus:border-cyan-500 py-1 transition-colors"
+														/>
+														{#if row.showDropdown}
+															<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
+																{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials).length === 0}
+																	<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
+																{:else}
+																	{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials) as mat}
+																		{@const isDisabled = mat.stock <= 0}
+																		<button
+																			type="button"
+																			disabled={isDisabled}
+																			onmousedown={(e) => {
+																				e.preventDefault();
+																				row.materialId = mat.id.toString();
+																				row.searchQuery = mat.name;
+																				row.showDropdown = false;
+																			}}
+																			class="w-full text-left px-3 py-2 hover:bg-cyan-50 text-[#0A417A] font-bold flex justify-between items-center transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+																		>
+																			<span class="truncate pr-2">{mat.name} ({mat.unit})</span>
+																			<span class="text-[10px] text-gray-400 shrink-0">SISA: {mat.stock}</span>
+																		</button>
+																	{/each}
+																{/if}
+															</div>
+														{/if}
+													</div>
 												</div>
 
 												<div class="flex gap-4 items-start">
@@ -555,19 +631,40 @@
 												<!-- Material Select -->
 												<div>
 													<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Pilih Material</label>
-													<select 
-														name="materialId[]" 
-														bind:value={row.materialId}
-														required 
-														class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] cursor-pointer focus:border-cyan-500 py-1 transition-colors"
-													>
-														<option value="">Pilih Material...</option>
-														{#each data.materials.filter(m => !m.hasStockRecord) as mat}
-															<option value={mat.id.toString()}>
-																{mat.name} ({mat.unit})
-															</option>
-														{/each}
-													</select>
+													<div class="relative w-full">
+														<input type="hidden" name="materialId[]" value={row.materialId} />
+														<input 
+															type="text"
+															placeholder="Pilih/Ketik Material..."
+															bind:value={row.searchQuery}
+															onfocus={() => { row.showDropdown = true; }}
+															onblur={() => handleBlur(row, data.materials.filter(m => !m.hasStockRecord))}
+															required
+															class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] focus:border-cyan-500 py-1 transition-colors"
+														/>
+														{#if row.showDropdown}
+															<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
+																{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials.filter(m => !m.hasStockRecord)).length === 0}
+																	<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
+																{:else}
+																	{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials.filter(m => !m.hasStockRecord)) as mat}
+																		<button
+																			type="button"
+																			onmousedown={(e) => {
+																				e.preventDefault();
+																				row.materialId = mat.id.toString();
+																				row.searchQuery = mat.name;
+																				row.showDropdown = false;
+																			}}
+																			class="w-full text-left px-3 py-2 hover:bg-cyan-50 text-[#0A417A] font-bold flex justify-between items-center transition-colors"
+																		>
+																			<span class="truncate pr-2">{mat.name} ({mat.unit})</span>
+																		</button>
+																	{/each}
+																{/if}
+															</div>
+														{/if}
+													</div>
 												</div>
 
 												<div class="flex gap-4 items-start">
@@ -694,14 +791,14 @@
 			{:else}
 				<!-- TABS BAGI ULP -->
 				<div class="flex border-b border-gray-200 mb-6 bg-gray-50 p-1 rounded-t-lg">
-					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'PERMINTAAN' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => ulpActiveTab = 'PERMINTAAN'}>
+					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'PERMINTAAN' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { ulpActiveTab = 'PERMINTAAN'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; }}>
 						PERMINTAAN
 					</button>
-					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'PEMAKAIAN' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => ulpActiveTab = 'PEMAKAIAN'}>
+					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'PEMAKAIAN' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { ulpActiveTab = 'PEMAKAIAN'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; }}>
 						PEMAKAIAN
 					</button>
 					{#if data.materials.filter(m => !m.hasStockRecord).length > 0 || ulpActiveTab === 'STOK_AWAL'}
-						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'STOK_AWAL' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => ulpActiveTab = 'STOK_AWAL'}>
+						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'STOK_AWAL' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { ulpActiveTab = 'STOK_AWAL'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; }}>
 							STOK AWAL
 						</button>
 					{/if}
@@ -739,19 +836,41 @@
 											<!-- Material Select -->
 											<div>
 												<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Pilih Material</label>
-												<select 
-													name="materialId[]" 
-													bind:value={row.materialId}
-													required 
-													class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] cursor-pointer focus:border-cyan-500 py-1 transition-colors"
-												>
-													<option value="">Pilih Material...</option>
-													{#each data.materials as mat}
-														<option value={mat.id.toString()}>
-															{mat.name} ({mat.up3Stock} {mat.unit.toLowerCase()})
-														</option>
-													{/each}
-												</select>
+												<div class="relative w-full">
+													<input type="hidden" name="materialId[]" value={row.materialId} />
+													<input 
+														type="text"
+														placeholder="Pilih/Ketik Material..."
+														bind:value={row.searchQuery}
+														onfocus={() => { row.showDropdown = true; }}
+														onblur={() => handleBlur(row, data.materials)}
+														required
+														class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] focus:border-cyan-500 py-1 transition-colors"
+													/>
+													{#if row.showDropdown}
+														<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
+															{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials).length === 0}
+																<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
+															{:else}
+																{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials) as mat}
+																	<button
+																		type="button"
+																		onmousedown={(e) => {
+																			e.preventDefault();
+																			row.materialId = mat.id.toString();
+																			row.searchQuery = mat.name;
+																			row.showDropdown = false;
+																		}}
+																		class="w-full text-left px-3 py-2 hover:bg-cyan-50 text-[#0A417A] font-bold flex justify-between items-center transition-colors"
+																	>
+																		<span class="truncate pr-2">{mat.name}</span>
+																		<span class="text-[10px] text-gray-400 shrink-0">{mat.up3Stock} {mat.unit.toLowerCase()}</span>
+																	</button>
+																{/each}
+															{/if}
+														</div>
+													{/if}
+												</div>
 											</div>
 
 											<div class="flex gap-4 items-start">
@@ -864,19 +983,42 @@
 												<!-- Material Select -->
 												<div>
 													<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Pilih Material</label>
-													<select 
-														name="materialId[]" 
-														bind:value={row.materialId}
-														required 
-														class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] cursor-pointer focus:border-cyan-500 py-1 transition-colors"
-													>
-														<option value="">Pilih Material...</option>
-														{#each data.materials as mat}
-															<option value={mat.id.toString()} disabled={mat.stock <= 0}>
-																{mat.name} ({mat.unit}) — [SISA: {mat.stock}]
-															</option>
-														{/each}
-													</select>
+													<div class="relative w-full">
+														<input type="hidden" name="materialId[]" value={row.materialId} />
+														<input 
+															type="text"
+															placeholder="Pilih/Ketik Material..."
+															bind:value={row.searchQuery}
+															onfocus={() => { row.showDropdown = true; }}
+															onblur={() => handleBlur(row, data.materials)}
+															required
+															class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] focus:border-cyan-500 py-1 transition-colors"
+														/>
+														{#if row.showDropdown}
+															<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
+																{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials).length === 0}
+																	<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
+																{:else}
+																	{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials) as mat}
+																		{@const isDisabled = mat.stock <= 0}
+																		<button
+																			type="button"
+																			disabled={isDisabled}
+																			onclick={() => {
+																				row.materialId = mat.id.toString();
+																				row.searchQuery = mat.name;
+																				row.showDropdown = false;
+																			}}
+																			class="w-full text-left px-3 py-2 hover:bg-cyan-50 text-[#0A417A] font-bold flex justify-between items-center transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+																		>
+																			<span class="truncate pr-2">{mat.name} ({mat.unit})</span>
+																			<span class="text-[10px] text-gray-400 shrink-0">SISA: {mat.stock}</span>
+																		</button>
+																	{/each}
+																{/if}
+															</div>
+														{/if}
+													</div>
 												</div>
 
 												<div class="flex gap-4 items-start">
@@ -990,19 +1132,40 @@
 												<!-- Material Select -->
 												<div>
 													<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Pilih Material</label>
-													<select 
-														name="materialId[]" 
-														bind:value={row.materialId}
-														required 
-														class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] cursor-pointer focus:border-cyan-500 py-1 transition-colors"
-													>
-														<option value="">Pilih Material...</option>
-														{#each data.materials.filter(m => !m.hasStockRecord) as mat}
-															<option value={mat.id.toString()}>
-																{mat.name} ({mat.unit})
-															</option>
-														{/each}
-													</select>
+													<div class="relative w-full">
+														<input type="hidden" name="materialId[]" value={row.materialId} />
+														<input 
+															type="text"
+															placeholder="Pilih/Ketik Material..."
+															bind:value={row.searchQuery}
+															onfocus={() => { row.showDropdown = true; }}
+															onblur={() => handleBlur(row, data.materials.filter(m => !m.hasStockRecord))}
+															required
+															class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] focus:border-cyan-500 py-1 transition-colors"
+														/>
+														{#if row.showDropdown}
+															<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
+																{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials.filter(m => !m.hasStockRecord)).length === 0}
+																	<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
+																{:else}
+																	{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials.filter(m => !m.hasStockRecord)) as mat}
+																		<button
+																			type="button"
+																			onmousedown={(e) => {
+																				e.preventDefault();
+																				row.materialId = mat.id.toString();
+																				row.searchQuery = mat.name;
+																				row.showDropdown = false;
+																			}}
+																			class="w-full text-left px-3 py-2 hover:bg-cyan-50 text-[#0A417A] font-bold flex justify-between items-center transition-colors"
+																		>
+																			<span class="truncate pr-2">{mat.name} ({mat.unit})</span>
+																		</button>
+																	{/each}
+																{/if}
+															</div>
+														{/if}
+													</div>
 												</div>
 
 												<div class="flex gap-4 items-start">

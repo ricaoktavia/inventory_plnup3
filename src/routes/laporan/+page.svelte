@@ -106,14 +106,13 @@
 						for (let c = 0; c < colCount; c++) {
 							const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
 							if (ws[cellRef]) {
-								const isNumeric = typeof excelRows[r][c] === 'number';
 								ws[cellRef].s = {
 									font: {
 										name: 'Calibri',
 										sz: 10
 									},
 									alignment: {
-										horizontal: isNumeric ? 'right' : (c === 0 || c === 2 ? 'center' : 'left'),
+										horizontal: c === 1 ? 'left' : 'center',
 										vertical: 'center'
 									},
 									border: {
@@ -225,14 +224,13 @@
 						for (let c = 0; c < colCount; c++) {
 							const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
 							if (ws[cellRef]) {
-								const isNumeric = typeof excelRows[r][c] === 'number';
 								ws[cellRef].s = {
 									font: {
 										name: 'Calibri',
 										sz: 10
 									},
 									alignment: {
-										horizontal: isNumeric ? 'right' : (c === 0 || c === 2 ? 'center' : 'left'),
+										horizontal: c === 1 ? 'left' : 'center',
 										vertical: 'center'
 									},
 									border: {
