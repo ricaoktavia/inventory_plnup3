@@ -38,7 +38,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	// Filter by ULP if role is ADMIN_ULP
 	if (user.role === 'ADMIN_ULP') {
-		query = query.where(eq(transactions.targetUlpId, user.ulpId!));
+		query = (query as any).where(eq(transactions.targetUlpId, user.ulpId!));
 	}
 
 	const historyRows = await query.orderBy(desc(transactions.createdAt)).limit(500);

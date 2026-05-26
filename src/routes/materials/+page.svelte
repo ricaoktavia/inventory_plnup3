@@ -176,7 +176,7 @@
 							{:else}
 								<!-- ULP view: show both UP3 stock AND ULP's own stock -->
 								{@const up3qty = data.stockMatrix[material.id]['up3'] || 0}
-								{@const ulpqty = data.stockMatrix[material.id][data.selectedUlpId] || 0}
+								{@const ulpqty = data.stockMatrix[material.id][data.selectedUlpId!] || 0}
 								<td class="px-4 py-4 text-center font-black text-base bg-blue-50/30 border-r border-blue-50 {up3qty <= 0 ? 'text-red-500' : 'text-gray-900'}">
 									{up3qty}
 								</td>
@@ -187,7 +187,7 @@
 
 							{#if data.userRole === 'ADMIN_UP3' && data.selectedUlpId !== 'rekap'}
 								<td class="px-6 py-4 text-right flex justify-end items-center gap-3">
-									<button onclick={() => editData = {id: material.id, name: material.name, unit: material.unit, currentStock: data.stockMatrix[material.id][data.selectedUlpId] || 0}} class="text-[#0188CE] hover:text-[#0A417A] font-medium text-sm transition-colors">Edit</button>
+									<button onclick={() => editData = {id: material.id, name: material.name, unit: material.unit, currentStock: data.stockMatrix[material.id][data.selectedUlpId!] || 0}} class="text-[#0188CE] hover:text-[#0A417A] font-medium text-sm transition-colors">Edit</button>
 									<form method="POST" action="?/hapus" use:enhance={({ cancel }) => {
 										if (!confirm('Yakin ingin menghapus material ini secara permanen?')) {
 											cancel();

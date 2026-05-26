@@ -16,9 +16,9 @@
 </div>
 
 <!-- SECTION 1: SMART ALERTS -->
-{#if data.criticalStocksCount > 0 || data.pendingDraftsCount > 0}
+{#if (data.criticalStocksCount ?? 0) > 0 || (data.pendingDraftsCount ?? 0) > 0}
 	<div class="mb-8 space-y-4">
-		{#if data.pendingDraftsCount > 0}
+		{#if (data.pendingDraftsCount ?? 0) > 0}
 			<div class="bg-cyan-50 border-l-4 border-cyan-500 p-4 rounded-r-lg shadow-sm flex items-start animate-pulse">
 				<svg class="h-6 w-6 text-cyan-500 mr-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
 				<div>
@@ -29,7 +29,7 @@
 			</div>
 		{/if}
 
-		{#if data.criticalStocksCount > 0}
+		{#if (data.criticalStocksCount ?? 0) > 0}
 			<div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm flex items-start">
 				<svg class="h-6 w-6 text-red-500 mr-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
 				<div>
@@ -49,14 +49,14 @@
 	<div class="bg-gradient-to-br from-[#06539C] to-[#0A6DB6] rounded-xl shadow-lg border border-transparent p-6 text-white text-center relative overflow-hidden group">
 		<div class="absolute -right-4 -top-4 w-24 h-24 bg-white opacity-5 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
 		<p class="text-sm font-medium text-white/80 uppercase tracking-wider mb-2">Total Jenis Katalog Master</p>
-		<h3 class="text-5xl font-bold">{data.kpi.totalMaterials || 0}</h3>
+		<h3 class="text-5xl font-bold">{data.kpi?.totalMaterials || 0}</h3>
 	</div>
 
 	<!-- Mutasi Keluar -->
 	<div class="bg-gradient-to-br from-[#FFD500] to-[#FFAB00] rounded-xl shadow-lg border border-transparent p-6 text-white text-center relative overflow-hidden group">
 		<div class="absolute -right-4 -top-4 w-24 h-24 bg-white opacity-20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
 		<p class="text-sm font-medium text-[#A66C00] uppercase tracking-wider mb-2">Total Transaksi {data.role === 'ADMIN_UP3' ? 'Transfer' : 'Pemakaian'}</p>
-		<h3 class="text-5xl font-bold text-white drop-shadow-sm">{data.kpi.mutasiKeluar || 0}</h3>
+		<h3 class="text-5xl font-bold text-white drop-shadow-sm">{data.kpi?.mutasiKeluar || 0}</h3>
 	</div>
 </div>
 
@@ -70,7 +70,7 @@
 			<span class="text-xs text-gray-400">Berdasar Volume Keluar</span>
 		</div>
 		
-		{#if data.top5Materials.length === 0}
+		{#if (data.top5Materials?.length ?? 0) === 0}
 			<div class="h-48 flex items-center justify-center text-gray-400 text-sm">Belum ada data pergerakan barang.</div>
 		{:else}
 			<!-- Bar chart container layout -->
@@ -102,7 +102,7 @@
 			<a href="/mutasi" class="text-xs font-bold text-cyan-600 hover:text-cyan-800">Lihat Semua</a>
 		</div>
 
-		{#if data.recentLogs.length === 0}
+		{#if (data.recentLogs?.length ?? 0) === 0}
 			<div class="flex-1 flex items-center justify-center text-gray-400 text-sm">Belum ada histori transaksi.</div>
 		{:else}
 			<div class="space-y-4">

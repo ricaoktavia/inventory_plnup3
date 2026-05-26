@@ -35,7 +35,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	// Filter by ULP if role is ADMIN_ULP
 	if (user.role === 'ADMIN_ULP') {
-		query = query.where(eq(transactions.targetUlpId, user.ulpId!));
+		query = (query as any).where(eq(transactions.targetUlpId, user.ulpId!));
 	}
 
 	// Query more rows (up to 10000) for exporting

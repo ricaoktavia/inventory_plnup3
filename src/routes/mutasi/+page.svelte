@@ -190,7 +190,7 @@
 		if (val && reqData) {
 			if (reqData.items && reqData.items.length > 0) {
 				materialRows = reqData.items.map((item: any) => {
-					const mat = data.materials.find((m: any) => m.id.toString() === item.materialId.toString());
+					const mat = (data.materials ?? []).find((m: any) => m.id.toString() === item.materialId.toString());
 					return {
 						materialId: item.materialId.toString(),
 						jumlah: item.jumlah,
@@ -243,7 +243,7 @@
 					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'PEMAKAIAN' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { up3ActiveTab = 'PEMAKAIAN'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; }}>
 						PEMAKAIAN LAPANGAN
 					</button>
-					{#if data.materials.filter(m => !m.hasStockRecord).length > 0 || up3ActiveTab === 'STOK_AWAL'}
+					{#if (data.materials ?? []).filter(m => !m.hasStockRecord).length > 0 || up3ActiveTab === 'STOK_AWAL'}
 						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'STOK_AWAL' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { up3ActiveTab = 'STOK_AWAL'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; }}>
 							INPUT STOK AWAL
 						</button>
@@ -330,16 +330,16 @@
 											placeholder="Pilih/Ketik Material..."
 											bind:value={row.searchQuery}
 											onfocus={() => { row.showDropdown = true; }}
-											onblur={() => handleBlur(row, data.materials)}
+											onblur={() => handleBlur(row, data.materials ?? [])}
 											required
 											class="block w-full border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-cyan-500 font-bold bg-white"
 										/>
 										{#if row.showDropdown}
 											<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
-												{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials).length === 0}
+												{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials ?? []).length === 0}
 													<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
 												{:else}
-													{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials) as mat}
+													{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials ?? []) as mat}
 														<button
 															type="button"
 															onmousedown={(e) => {
@@ -367,13 +367,13 @@
 												bind:value={row.jumlah}
 												required 
 												min="0"
-												class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs text-center outline-none {row.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0) ? 'border-red-500 bg-red-50 text-red-600' : ''}"
+												class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs text-center outline-none {Number(row.jumlah) > ((data.materials ?? []).find(m => m.id.toString() === row.materialId)?.stock || 0) ? 'border-red-500 bg-red-50 text-red-600' : ''}"
 											>
 										</div>
 										<input type="text" name="keterangan[]" placeholder="Keterangan (Kondisi/Ket)" class="flex-1 border border-gray-300 rounded px-2 py-1.5 text-xs outline-none">
 									</div>
-									{#if row.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0)}
-										<p class="text-[9px] text-red-500 font-bold italic mt-1">⚠️ Stok pusat tidak cukup ({data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0})</p>
+									{#if Number(row.jumlah) > ((data.materials ?? []).find(m => m.id.toString() === row.materialId)?.stock || 0)}
+										<p class="text-[9px] text-red-500 font-bold italic mt-1">⚠️ Stok pusat tidak cukup ({(data.materials ?? []).find(m => m.id.toString() === row.materialId)?.stock || 0})</p>
 									{/if}
 								</div>
 							{/each}
@@ -484,16 +484,16 @@
 															placeholder="Pilih/Ketik Material..."
 															bind:value={row.searchQuery}
 															onfocus={() => { row.showDropdown = true; }}
-															onblur={() => handleBlur(row, data.materials)}
+															onblur={() => handleBlur(row, data.materials ?? [])}
 															required
 															class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] focus:border-cyan-500 py-1 transition-colors"
 														/>
 														{#if row.showDropdown}
 															<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
-																{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials).length === 0}
+																{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials ?? []).length === 0}
 																	<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
 																{:else}
-																	{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials) as mat}
+																	{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials ?? []) as mat}
 																		<button
 																			type="button"
 																			onmousedown={(e) => {
@@ -526,12 +526,12 @@
 																bind:value={row.jumlah}
 																required 
 																min="1"
-																class="w-full border-b-2 border-gray-100 rounded px-1 py-1 text-sm text-center font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors {row.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0) ? 'text-red-500 border-red-200 bg-red-50' : ''}"
+																class="w-full border-b-2 border-gray-100 rounded px-1 py-1 text-sm text-center font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors {Number(row.jumlah) > ((data.materials ?? []).find(m => m.id.toString() === row.materialId)?.stock || 0) ? 'text-red-500 border-red-200 bg-red-50' : ''}"
 															>
-															<span class="text-[10px] font-bold text-gray-400 truncate">{data.materials.find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
+															<span class="text-[10px] font-bold text-gray-400 truncate">{(data.materials ?? []).find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
 														</div>
-														{#if row.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0)}
-															<span class="text-[8px] text-red-500 font-bold block mt-1 tracking-tighter">SISA: {data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0}</span>
+														{#if Number(row.jumlah) > ((data.materials ?? []).find(m => m.id.toString() === row.materialId)?.stock || 0)}
+															<span class="text-[8px] text-red-500 font-bold block mt-1 tracking-tighter">SISA: {(data.materials ?? []).find(m => m.id.toString() === row.materialId)?.stock || 0}</span>
 														{/if}
 													</div>
 
@@ -710,7 +710,8 @@
 						
 						{#if pendingStocks && pendingStocks.length > 0}
 							<div class="space-y-6 flex-1 overflow-y-auto pr-2 custom-scroll max-h-[550px]">
-								{#each Object.entries(groupedStocks) as [ulpName, transactions]}
+								{#each Object.entries(groupedStocks) as [ulpName, trxList]}
+									{@const trxItems = trxList as Array<{id: number, referenceNumber: string, date: string, items: Array<{name: string, quantity: number}>}>}
 									<div class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
 										<!-- Group Header -->
 										<div class="bg-gray-50 border-b border-gray-200 px-5 py-3 flex items-center justify-between">
@@ -720,12 +721,12 @@
 												</div>
 												<h3 class="font-black text-[#0A417A] text-sm uppercase tracking-widest">{ulpName}</h3>
 											</div>
-											<span class="bg-[#0A417A] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-sm">{transactions.length} Pengajuan</span>
+											<span class="bg-[#0A417A] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-sm">{trxItems.length} Pengajuan</span>
 										</div>
 										
 										<!-- Group Content (Requests) -->
 										<div class="p-5 space-y-5 bg-gray-50/30">
-											{#each transactions as trx}
+											{#each trxItems as trx}
 												<div class="border border-yellow-200 rounded-xl p-5 shadow-sm bg-white relative transition-all hover:shadow-md">
 													<div class="flex justify-between items-center mb-3 border-b border-gray-50 pb-2">
 														<div>
@@ -791,7 +792,7 @@
 					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'PEMAKAIAN' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { ulpActiveTab = 'PEMAKAIAN'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; }}>
 						PEMAKAIAN
 					</button>
-					{#if data.materials.filter(m => !m.hasStockRecord).length > 0 || ulpActiveTab === 'STOK_AWAL'}
+					{#if (data.materials ?? []).filter(m => !m.hasStockRecord).length > 0 || ulpActiveTab === 'STOK_AWAL'}
 						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'STOK_AWAL' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { ulpActiveTab = 'STOK_AWAL'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; }}>
 							STOK AWAL
 						</button>
@@ -837,16 +838,16 @@
 														placeholder="Pilih/Ketik Material..."
 														bind:value={row.searchQuery}
 														onfocus={() => { row.showDropdown = true; }}
-														onblur={() => handleBlur(row, data.materials)}
+														onblur={() => handleBlur(row, data.materials ?? [])}
 														required
 														class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] focus:border-cyan-500 py-1 transition-colors"
 													/>
 													{#if row.showDropdown}
 														<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
-															{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials).length === 0}
+															{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials ?? []).length === 0}
 																<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
 															{:else}
-																{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials) as mat}
+																{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials ?? []) as mat}
 																	<button
 																		type="button"
 																		onmousedown={(e) => {
@@ -881,7 +882,7 @@
 															min="1"
 															class="w-full border-b-2 border-gray-100 rounded px-1 py-1 text-sm text-center font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors"
 														>
-														<span class="text-[10px] font-bold text-gray-400 truncate">{data.materials.find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
+														<span class="text-[10px] font-bold text-gray-400 truncate">{(data.materials ?? []).find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
 													</div>
 												</div>
 
@@ -990,16 +991,16 @@
 															placeholder="Pilih/Ketik Material..."
 															bind:value={row.searchQuery}
 															onfocus={() => { row.showDropdown = true; }}
-															onblur={() => handleBlur(row, data.materials)}
+															onblur={() => handleBlur(row, data.materials ?? [])}
 															required
 															class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] focus:border-cyan-500 py-1 transition-colors"
 														/>
 														{#if row.showDropdown}
 															<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
-																{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials).length === 0}
+																{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials ?? []).length === 0}
 																	<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
 																{:else}
-																	{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials) as mat}
+																	{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials ?? []) as mat}
 																		<button
 																			type="button"
 																			onmousedown={(e) => {
@@ -1032,12 +1033,12 @@
 																bind:value={row.jumlah}
 																required 
 																min="1"
-																class="w-full border-b-2 border-gray-100 rounded px-1 py-1 text-sm text-center font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors {row.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0) ? 'text-red-500 border-red-200 bg-red-50' : ''}"
+																class="w-full border-b-2 border-gray-100 rounded px-1 py-1 text-sm text-center font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors {Number(row.jumlah) > ((data.materials ?? []).find(m => m.id.toString() === row.materialId)?.stock || 0) ? 'text-red-500 border-red-200 bg-red-50' : ''}"
 															>
-															<span class="text-[10px] font-bold text-gray-400 truncate">{data.materials.find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
+															<span class="text-[10px] font-bold text-gray-400 truncate">{(data.materials ?? []).find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
 														</div>
-														{#if row.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0)}
-															<span class="text-[8px] text-red-500 font-bold block mt-1 tracking-tighter">SISA: {data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0}</span>
+														{#if Number(row.jumlah) > ((data.materials ?? []).find(m => m.id.toString() === row.materialId)?.stock || 0)}
+															<span class="text-[8px] text-red-500 font-bold block mt-1 tracking-tighter">SISA: {(data.materials ?? []).find(m => m.id.toString() === row.materialId)?.stock || 0}</span>
 														{/if}
 													</div>
 
@@ -1137,16 +1138,16 @@
 															placeholder="Pilih/Ketik Material..."
 															bind:value={row.searchQuery}
 															onfocus={() => { row.showDropdown = true; }}
-															onblur={() => handleBlur(row, data.materials.filter(m => !m.hasStockRecord))}
+															onblur={() => handleBlur(row, (data.materials ?? []).filter(m => !m.hasStockRecord))}
 															required
 															class="w-full border-b-2 border-gray-100 text-sm outline-none bg-transparent font-black text-[#0A417A] focus:border-cyan-500 py-1 transition-colors"
 														/>
 														{#if row.showDropdown}
 															<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
-																{#if getFilteredMaterials(row.searchQuery, row.materialId, data.materials.filter(m => !m.hasStockRecord)).length === 0}
+																{#if getFilteredMaterials(row.searchQuery, row.materialId, (data.materials ?? []).filter(m => !m.hasStockRecord)).length === 0}
 																	<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>
 																{:else}
-																	{#each getFilteredMaterials(row.searchQuery, row.materialId, data.materials.filter(m => !m.hasStockRecord)) as mat}
+																	{#each getFilteredMaterials(row.searchQuery, row.materialId, (data.materials ?? []).filter(m => !m.hasStockRecord)) as mat}
 																		<button
 																			type="button"
 																			onmousedown={(e) => {
@@ -1180,7 +1181,7 @@
 																min="0"
 																class="flex-1 border-b-2 border-gray-100 rounded px-2 py-1 text-sm font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors"
 															>
-															<span class="text-[10px] font-bold text-gray-400 truncate w-16">{data.materials.find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
+															<span class="text-[10px] font-bold text-gray-400 truncate w-16">{(data.materials ?? []).find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
 														</div>
 													</div>
 												</div>

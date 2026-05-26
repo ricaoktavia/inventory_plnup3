@@ -1,0 +1,679 @@
+﻿Loading svelte-check in workspace: d:\inventory_plnup3
+Getting Svelte diagnostics...
+
+d:\inventory_plnup3\[32msrc\routes\export\+page.server.ts[39m:38:3
+[31mError[39m: Property 'where' is missing in type 'Omit<import("d:/inventory_plnup3/node_modules/drizzle-orm/mysql-core/query-builders/select").MySqlSelectBase<"transactions", { id: import("d:/inventory_plnup3/node_modules/drizzle-orm/mysql-core/columns/common").MySqlColumn<{ name: "id"; tableName: "transactions"; dataType: "number"; columnType: "MySqlInt"; data: nu...' but required in type 'Omit<import("d:/inventory_plnup3/node_modules/drizzle-orm/mysql-core/query-builders/select").MySqlSelectBase<"transactions", { id: import("d:/inventory_plnup3/node_modules/drizzle-orm/mysql-core/columns/common").MySqlColumn<{ name: "id"; tableName: "transactions"; dataType: "number"; columnType: "MySqlInt"; data: nu...'. 
+[36m	if (user.role === 'ADMIN_ULP') {
+		[35mquery[36m = query.where(eq(transactions.targetUlpId, user.ulpId!));
+	}[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.server.ts[39m:335:14
+[31mError[39m: Property 'error' does not exist on type '{ success: boolean; } | { error: any; }'.
+  Property 'error' does not exist on type '{ success: boolean; }'. 
+[36m
+		if (result.[35merror[36m) return fail(400, { error: result.error });[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.server.ts[39m:335:54
+[31mError[39m: Property 'error' does not exist on type '{ success: boolean; } | { error: any; }'.
+  Property 'error' does not exist on type '{ success: boolean; }'. 
+[36m
+		if (result.error) return fail(400, { error: result.[35merror[36m });[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.server.ts[39m:457:14
+[31mError[39m: Property 'error' does not exist on type '{ success: boolean; } | { error: any; }'.
+  Property 'error' does not exist on type '{ success: boolean; }'. 
+[36m
+		if (result.[35merror[36m) return fail(400, { error: result.error });[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.server.ts[39m:457:54
+[31mError[39m: Property 'error' does not exist on type '{ success: boolean; } | { error: any; }'.
+  Property 'error' does not exist on type '{ success: boolean; }'. 
+[36m
+		if (result.error) return fail(400, { error: result.[35merror[36m });[39m
+
+d:\inventory_plnup3\[32msrc\routes\usage-tracker\+page.server.ts[39m:41:3
+[31mError[39m: Property 'where' is missing in type 'Omit<import("d:/inventory_plnup3/node_modules/drizzle-orm/mysql-core/query-builders/select").MySqlSelectBase<"transactions", { id: import("d:/inventory_plnup3/node_modules/drizzle-orm/mysql-core/columns/common").MySqlColumn<{ name: "id"; tableName: "transactions"; dataType: "number"; columnType: "MySqlInt"; data: nu...' but required in type 'Omit<import("d:/inventory_plnup3/node_modules/drizzle-orm/mysql-core/query-builders/select").MySqlSelectBase<"transactions", { id: import("d:/inventory_plnup3/node_modules/drizzle-orm/mysql-core/columns/common").MySqlColumn<{ name: "id"; tableName: "transactions"; dataType: "number"; columnType: "MySqlInt"; data: nu...'. 
+[36m	if (user.role === 'ADMIN_ULP') {
+		[35mquery[36m = query.where(eq(transactions.targetUlpId, user.ulpId!));
+	}[39m
+
+d:\inventory_plnup3\[32msrc\routes\+page.svelte[39m:19:6
+[31mError[39m: 'data.criticalStocksCount' is possibly 'undefined'. (ts)
+[36m<!-- SECTION 1: SMART ALERTS -->
+{#if [35mdata.criticalStocksCount[36m > 0 || data.pendingDraftsCount > 0}
+	<div class="mb-8 space-y-4">[39m
+
+d:\inventory_plnup3\[32msrc\routes\+page.svelte[39m:19:38
+[31mError[39m: 'data.pendingDraftsCount' is possibly 'undefined'. (ts)
+[36m<!-- SECTION 1: SMART ALERTS -->
+{#if data.criticalStocksCount > 0 || [35mdata.pendingDraftsCount[36m > 0}
+	<div class="mb-8 space-y-4">[39m
+
+d:\inventory_plnup3\[32msrc\routes\+page.svelte[39m:21:8
+[31mError[39m: 'data.pendingDraftsCount' is possibly 'undefined'. (ts)
+[36m	<div class="mb-8 space-y-4">
+		{#if [35mdata.pendingDraftsCount[36m > 0}
+			<div class="bg-cyan-50 border-l-4 border-cyan-500 p-4 rounded-r-lg shadow-sm flex items-start animate-pulse">[39m
+
+d:\inventory_plnup3\[32msrc\routes\+page.svelte[39m:32:8
+[31mError[39m: 'data.criticalStocksCount' is possibly 'undefined'. (ts)
+[36m
+		{#if [35mdata.criticalStocksCount[36m > 0}
+			<div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm flex items-start">[39m
+
+d:\inventory_plnup3\[32msrc\routes\+page.svelte[39m:52:35
+[31mError[39m: 'data.kpi' is possibly 'undefined'. (ts)
+[36m		<p class="text-sm font-medium text-white/80 uppercase tracking-wider mb-2">Total Jenis Katalog Master</p>
+		<h3 class="text-5xl font-bold">{[35mdata.kpi[36m.totalMaterials || 0}</h3>
+	</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\+page.svelte[39m:59:61
+[31mError[39m: 'data.kpi' is possibly 'undefined'. (ts)
+[36m		<p class="text-sm font-medium text-[#A66C00] uppercase tracking-wider mb-2">Total Transaksi {data.role === 'ADMIN_UP3' ? 'Transfer' : 'Pemakaian'}</p>
+		<h3 class="text-5xl font-bold text-white drop-shadow-sm">{[35mdata.kpi[36m.mutasiKeluar || 0}</h3>
+	</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\+page.svelte[39m:73:8
+[31mError[39m: 'data.top5Materials' is possibly 'undefined'. (ts)
+[36m		
+		{#if [35mdata.top5Materials[36m.length === 0}
+			<div class="h-48 flex items-center justify-center text-gray-400 text-sm">Belum ada data pergerakan barang.</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\+page.svelte[39m:105:8
+[31mError[39m: 'data.recentLogs' is possibly 'undefined'. (ts)
+[36m
+		{#if [35mdata.recentLogs[36m.length === 0}
+			<div class="flex-1 flex items-center justify-center text-gray-400 text-sm">Belum ada histori transaksi.</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\laporan\+page.svelte[39m:6:25
+[33mWarn[39m: This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally (svelte)
+[36m	let { data } = $props();
+	let activeTab = $state([35mdata[36m.activeTab || 'MUTASI'); // MUTASI | PEMAKAIAN[39m
+
+d:\inventory_plnup3\[32msrc\routes\materials\+page.svelte[39m:229:8
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m						<div>
+							[35m<label class="block text-sm font-semibold text-gray-700 mb-1">Nama Material Baru</label>[36m
+							<input type="text" name="nama" required class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#0188CE] focus:ring-1 focus:ring-[#0188CE]" placeholder="Contoh: Kabel TIC 2x10" />[39m
+
+d:\inventory_plnup3\[32msrc\routes\materials\+page.svelte[39m:233:8
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m						<div class="w-full">
+							[35m<label class="block text-sm font-semibold text-gray-700 mb-1">Satuan</label>[36m
+							<input type="text" name="satuan" required class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#0188CE] focus:ring-1 focus:ring-[#0188CE]" placeholder="Contoh: MTR" />[39m
+
+d:\inventory_plnup3\[32msrc\routes\materials\+page.svelte[39m:237:8
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m						<div>
+							[35m<label class="block text-sm font-semibold text-gray-700 mb-1">Deskripsi (Opsional)</label>[36m
+							<textarea name="deskripsi" class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#0188CE] focus:ring-1 focus:ring-[#0188CE]" placeholder="Keterangan material..."></textarea>[39m
+
+d:\inventory_plnup3\[32msrc\routes\materials\+page.svelte[39m:244:7
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m					<div class="pt-2 border-t border-gray-100 mt-4">
+						[35m<label class="block text-sm font-bold text-[#0A417A] mb-1">Stok Awal Fisik ({data.ulpName})</label>[36m
+						<input type="number" min="0" name="jumlah" value="0" required class="block w-full border border-cyan-300 bg-cyan-50 rounded-lg px-3 py-3 text-lg font-bold text-center outline-none focus:border-[#0188CE] focus:ring-1 focus:ring-[#0188CE]" placeholder="0" />[39m
+
+d:\inventory_plnup3\[32msrc\routes\materials\+page.svelte[39m:276:7
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m					<div>
+						[35m<label class="block text-sm font-semibold text-gray-700 mb-1">Nama Material</label>[36m
+						<input type="text" name="nama" required bind:value={editData.name} class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#0188CE] focus:ring-1 focus:ring-[#0188CE]" />[39m
+
+d:\inventory_plnup3\[32msrc\routes\materials\+page.svelte[39m:280:7
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m					<div>
+						[35m<label class="block text-sm font-semibold text-gray-700 mb-1">Satuan</label>[36m
+						<input type="text" name="satuan" required bind:value={editData.unit} class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#0188CE] focus:ring-1 focus:ring-[#0188CE]" />[39m
+
+d:\inventory_plnup3\[32msrc\routes\materials\+page.svelte[39m:284:7
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m					<div>
+						[35m<label class="block text-sm font-bold text-[#0A417A] mb-1">Stok Tersedia ({data.ulpName})</label>[36m
+						<input type="number" name="stok" min="0" required bind:value={editData.currentStock} class="block w-full border border-cyan-300 bg-cyan-50 rounded-lg px-3 py-2.5 text-base font-bold text-center outline-none focus:border-[#0188CE] focus:ring-1 focus:ring-[#0188CE]" />[39m
+
+d:\inventory_plnup3\[32msrc\routes\materials\+page.svelte[39m:179:56
+[31mError[39m: Type 'undefined' cannot be used as an index type. (ts)
+[36m								{@const up3qty = data.stockMatrix[material.id]['up3'] || 0}
+								{@const ulpqty = data.stockMatrix[material.id][[35mdata.selectedUlpId[36m] || 0}
+								<td class="px-4 py-4 text-center font-black text-base bg-blue-50/30 border-r border-blue-50 {up3qty <= 0 ? 'text-red-500' : 'text-gray-900'}">[39m
+
+d:\inventory_plnup3\[32msrc\routes\materials\+page.svelte[39m:190:148
+[31mError[39m: Type 'undefined' cannot be used as an index type. (ts)
+[36m								<td class="px-6 py-4 text-right flex justify-end items-center gap-3">
+									<button onclick={() => editData = {id: material.id, name: material.name, unit: material.unit, currentStock: data.stockMatrix[material.id][[35mdata.selectedUlpId[36m] || 0}} class="text-[#0188CE] hover:text-[#0A417A] font-medium text-sm transition-colors">Edit</button>
+									<form method="POST" action="?/hapus" use:enhance={({ cancel }) => {[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:314:8
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m						<div class="flex justify-between items-center mb-3">
+							[35m<label class="block text-sm font-bold text-[#0A417A] uppercase tracking-wider">Rincian Barang</label>[36m
+							<button type="button" onclick={addMaterialRow} class="text-[10px] font-black text-white bg-[#0188CE] hover:bg-blue-600 px-3 py-1 rounded-md shadow-sm">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:390:7
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m					<div class="space-y-1.5 border-t border-gray-100 pt-4">
+						[35m<label class="block text-sm font-bold text-[#0A417A]">
+							Foto Dokumentasi Serah Terima
+							<span class="text-red-500 ml-1">*</span>
+							<span class="text-[10px] font-normal text-red-500 ml-1">(Wajib diisi)</span>
+						</label>[36m
+						<div class="flex items-center gap-4">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:444:10
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m								<div class="space-y-1.5">
+									[35m<label class="text-[10px] font-black text-[#0A417A] uppercase tracking-widest pl-1">Tanggal Pasang</label>[36m
+									<input type="date" name="tanggal" required class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-cyan-500 bg-white shadow-sm">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:448:10
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m								<div class="space-y-1.5">
+									[35m<label class="text-[10px] font-black text-[#0A417A] uppercase tracking-widest pl-1">Nama Petugas</label>[36m
+									<input type="text" name="takerName" placeholder="Nama Teknisi/Petugas" required class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-cyan-500 bg-white shadow-sm">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:454:9
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m							<div class="space-y-1.5">
+								[35m<label class="text-[10px] font-black text-[#0A417A] uppercase tracking-widest pl-1">Tujuan / Nomor SPK</label>[36m
+								<input type="text" name="usagePurpose" placeholder="Contoh: Perbaikan Trafo Gardu / SPK-UP3-2026-001" required class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-cyan-500 bg-white shadow-sm font-bold text-gray-700">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:470:14
+[33mWarn[39m: Buttons and links should either contain text or have an `aria-label`, `aria-labelledby` or `title` attribute
+https://svelte.dev/e/a11y_consider_explicit_label (svelte)
+[36m												{#if materialRows.length > 1}
+													[35m<button type="button" onclick={() => removeMaterialRow(i)} class="text-red-400 hover:text-red-600 transition-colors p-1">
+														<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+													</button>[36m
+												{/if}[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:479:14
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m												<div>
+													[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Pilih Material</label>[36m
+													<div class="relative w-full">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:520:15
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m													<div class="w-24">
+														[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Jumlah</label>[36m
+														<div class="flex items-center gap-1">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:540:15
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m													<div class="flex-1">
+														[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Keterangan / Catatan Lapangan</label>[36m
+														<input[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:618:14
+[33mWarn[39m: Buttons and links should either contain text or have an `aria-label`, `aria-labelledby` or `title` attribute
+https://svelte.dev/e/a11y_consider_explicit_label (svelte)
+[36m												{#if materialRows.length > 1}
+													[35m<button type="button" onclick={() => removeMaterialRow(i)} class="text-red-400 hover:text-red-600 transition-colors p-1">
+														<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+													</button>[36m
+												{/if}[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:627:14
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m												<div>
+													[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Pilih Material</label>[36m
+													<div class="relative w-full">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:667:15
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m													<div class="w-full">
+														[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Jumlah Fisik Saat Ini</label>[36m
+														<div class="flex items-center gap-2">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:807:8
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m						<div class="border border-gray-200 p-5 rounded-2xl bg-gray-50/50 shadow-inner">
+							[35m<label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Nama Petugas Pengambil / Penanggung Jawab</label>[36m
+							<input type="text" name="takerName" placeholder="Contoh: Budi (Akan ke Gudang UP3)" required class="w-full border-b-2 border-gray-200 py-2 text-sm font-black text-[#0A417A] outline-none bg-transparent focus:border-cyan-500 transition-colors">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:823:13
+[33mWarn[39m: Buttons and links should either contain text or have an `aria-label`, `aria-labelledby` or `title` attribute
+https://svelte.dev/e/a11y_consider_explicit_label (svelte)
+[36m											{#if materialRows.length > 1}
+												[35m<button type="button" onclick={() => removeMaterialRow(i)} class="text-red-400 hover:text-red-600 transition-colors p-1">
+													<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+												</button>[36m
+											{/if}[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:832:13
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m											<div>
+												[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Pilih Material</label>[36m
+												<div class="relative w-full">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:873:14
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m												<div class="w-24">
+													[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Jumlah</label>[36m
+													<div class="flex items-center gap-1">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:890:14
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m												<div class="flex-1">
+													[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Keterangan (Opsional)</label>[36m
+													<input[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:950:10
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m								<div class="space-y-1.5">
+									[35m<label class="text-[10px] font-black text-[#0A417A] uppercase tracking-widest pl-1">Tanggal Pasang</label>[36m
+									<input type="date" name="tanggal" required class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-cyan-500 bg-white shadow-sm">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:954:10
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m								<div class="space-y-1.5">
+									[35m<label class="text-[10px] font-black text-[#0A417A] uppercase tracking-widest pl-1">Nama Petugas</label>[36m
+									<input type="text" name="takerName" placeholder="Nama Teknisi" required class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-cyan-500 bg-white shadow-sm">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:960:9
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m							<div class="space-y-1.5">
+								[35m<label class="text-[10px] font-black text-[#0A417A] uppercase tracking-widest pl-1">Tujuan / Nomor SPK</label>[36m
+								<input type="text" name="usagePurpose" placeholder="Contoh: Perbaikan Gardu GT-01 / SPK-2023-001" required class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-cyan-500 bg-white shadow-sm font-bold text-gray-700">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:976:14
+[33mWarn[39m: Buttons and links should either contain text or have an `aria-label`, `aria-labelledby` or `title` attribute
+https://svelte.dev/e/a11y_consider_explicit_label (svelte)
+[36m												{#if materialRows.length > 1}
+													[35m<button type="button" onclick={() => removeMaterialRow(i)} class="text-red-400 hover:text-red-600 transition-colors p-1">
+														<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+													</button>[36m
+												{/if}[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:985:14
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m												<div>
+													[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Pilih Material</label>[36m
+													<div class="relative w-full">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1026:15
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m													<div class="w-24">
+														[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Jumlah</label>[36m
+														<div class="flex items-center gap-1">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1046:15
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m													<div class="flex-1">
+														[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Keterangan / Catatan Lapangan</label>[36m
+														<input[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1123:14
+[33mWarn[39m: Buttons and links should either contain text or have an `aria-label`, `aria-labelledby` or `title` attribute
+https://svelte.dev/e/a11y_consider_explicit_label (svelte)
+[36m												{#if materialRows.length > 1}
+													[35m<button type="button" onclick={() => removeMaterialRow(i)} class="text-red-400 hover:text-red-600 transition-colors p-1">
+														<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+													</button>[36m
+												{/if}[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1132:14
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m												<div>
+													[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Pilih Material</label>[36m
+													<div class="relative w-full">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1172:15
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m													<div class="w-full">
+														[35m<label class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Jumlah Fisik Saat Ini</label>[36m
+														<div class="flex items-center gap-2">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:193:18
+[31mError[39m: 'data.materials' is possibly 'undefined'. (ts)
+[36m				materialRows = reqData.items.map((item: any) => {
+					const mat = [35mdata.materials[36m.find((m: any) => m.id.toString() === item.materialId.toString());
+					return {[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:370:104
+[31mError[39m: Operator '>' cannot be applied to types 'string' and 'number'. (ts)
+[36m												min="0"
+												class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs text-center outline-none {[35mrow.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0)[36m ? 'border-red-500 bg-red-50 text-red-600' : ''}"
+											>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:375:15
+[31mError[39m: Operator '>' cannot be applied to types 'string' and 'number'. (ts)
+[36m									</div>
+									{#if [35mrow.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0)[36m}
+										<p class="text-[9px] text-red-500 font-bold italic mt-1">ΓÜá∩╕Å Stok pusat tidak cukup ({data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0})</p>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:529:176
+[31mError[39m: Operator '>' cannot be applied to types 'string' and 'number'. (ts)
+[36m																min="1"
+																class="w-full border-b-2 border-gray-100 rounded px-1 py-1 text-sm text-center font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors {[35mrow.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0)[36m ? 'text-red-500 border-red-200 bg-red-50' : ''}"
+															>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:533:20
+[31mError[39m: Operator '>' cannot be applied to types 'string' and 'number'. (ts)
+[36m														</div>
+														{#if [35mrow.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0)[36m}
+															<span class="text-[8px] text-red-500 font-bold block mt-1 tracking-tighter">SISA: {data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0}</span>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:723:107
+[31mError[39m: 'transactions' is of type 'unknown'. (ts)
+[36m											</div>
+											<span class="bg-[#0A417A] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-sm">{[35mtransactions[36m.length} Pengajuan</span>
+										</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:728:19
+[31mError[39m: Argument of type 'unknown' is not assignable to parameter of type 'ArrayLike<unknown> | Iterable<unknown> | null | undefined'. (ts)
+[36m										<div class="p-5 space-y-5 bg-gray-50/30">
+											{#each [35mtransactions[36m as trx}
+												<div class="border border-yellow-200 rounded-xl p-5 shadow-sm bg-white relative transition-all hover:shadow-md">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:732:115
+[31mError[39m: 'trx' is of type 'unknown'. (ts)
+[36m														<div>
+															<p class="text-[10px] font-black text-gray-400 italic">No. Referensi: <span class="text-gray-600">{[35mtrx[36m.referenceNumber}</span></p>
+															<p class="text-[10px] font-bold text-gray-400 italic">Tanggal: {new Date(trx.date).toLocaleDateString('id-ID')}</p>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:733:89
+[31mError[39m: 'trx' is of type 'unknown'. (ts)
+[36m															<p class="text-[10px] font-black text-gray-400 italic">No. Referensi: <span class="text-gray-600">{trx.referenceNumber}</span></p>
+															<p class="text-[10px] font-bold text-gray-400 italic">Tanggal: {new Date([35mtrx[36m.date).toLocaleDateString('id-ID')}</p>
+														</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:740:22
+[31mError[39m: 'trx' is of type 'unknown'. (ts)
+[36m														<p class="text-[9px] font-black text-gray-400 uppercase mb-3">Rincian Material yang Diajukan:</p>
+														{#each [35mtrx[36m.items as item}
+															<div class="flex justify-between items-center text-xs font-bold text-gray-700 border-b border-gray-100 pb-1.5 mb-1.5 last:border-0 last:pb-0 last:mb-0">[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:750:65
+[31mError[39m: 'trx' is of type 'unknown'. (ts)
+[36m														<form method="POST" action="?/tolakStokAwal" use:enhance={handleEnhance} class="flex-1">
+															<input type="hidden" name="transactionId" value={[35mtrx[36m.id} />
+															<button class="w-full text-[11px] bg-red-500 text-white font-black py-2.5 rounded-xl shadow-sm hover:bg-red-600 transition-all disabled:opacity-50" disabled={isSubmitting}>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:760:65
+[31mError[39m: 'trx' is of type 'unknown'. (ts)
+[36m														<form method="POST" action="?/konfirmasiStokAwal" use:enhance={handleEnhance} class="flex-1">
+															<input type="hidden" name="transactionId" value={[35mtrx[36m.id} />
+															<button class="w-full text-[11px] bg-green-500 text-white font-black py-2.5 rounded-xl shadow-sm hover:bg-green-600 transition-all disabled:opacity-50" disabled={isSubmitting}>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:794:11
+[31mError[39m: 'data.materials' is possibly 'undefined'. (ts)
+[36m					</button>
+					{#if [35mdata.materials[36m.filter(m => !m.hasStockRecord).length > 0 || ulpActiveTab === 'STOK_AWAL'}
+						<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {ulpActiveTab === 'STOK_AWAL' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { ulpActiveTab = 'STOK_AWAL'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; }}>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:840:45
+[31mError[39m: Argument of type '{ id: number; name: string; unit: string; stock: number; up3Stock: number; hasStockRecord: boolean; }[] | undefined' is not assignable to parameter of type 'any[]'.
+  Type 'undefined' is not assignable to type 'any[]'. (ts)
+[36m														onfocus={() => { row.showDropdown = true; }}
+														onblur={() => handleBlur(row, [35mdata.materials[36m)}
+														required[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:846:75
+[31mError[39m: Argument of type '{ id: number; name: string; unit: string; stock: number; up3Stock: number; hasStockRecord: boolean; }[] | undefined' is not assignable to parameter of type 'any[]'.
+  Type 'undefined' is not assignable to type 'any[]'. (ts)
+[36m														<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
+															{#if getFilteredMaterials(row.searchQuery, row.materialId, [35mdata.materials[36m).length === 0}
+																<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:849:78
+[31mError[39m: Argument of type '{ id: number; name: string; unit: string; stock: number; up3Stock: number; hasStockRecord: boolean; }[] | undefined' is not assignable to parameter of type 'any[]'.
+  Type 'undefined' is not assignable to type 'any[]'. (ts)
+[36m															{:else}
+																{#each getFilteredMaterials(row.searchQuery, row.materialId, [35mdata.materials[36m) as mat}
+																	<button[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:884:75
+[31mError[39m: 'data.materials' is possibly 'undefined'. (ts)
+[36m														>
+														<span class="text-[10px] font-bold text-gray-400 truncate">{[35mdata.materials[36m.find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
+													</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:993:46
+[31mError[39m: Argument of type '{ id: number; name: string; unit: string; stock: number; up3Stock: number; hasStockRecord: boolean; }[] | undefined' is not assignable to parameter of type 'any[]'.
+  Type 'undefined' is not assignable to type 'any[]'. (ts)
+[36m															onfocus={() => { row.showDropdown = true; }}
+															onblur={() => handleBlur(row, [35mdata.materials[36m)}
+															required[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:999:76
+[31mError[39m: Argument of type '{ id: number; name: string; unit: string; stock: number; up3Stock: number; hasStockRecord: boolean; }[] | undefined' is not assignable to parameter of type 'any[]'.
+  Type 'undefined' is not assignable to type 'any[]'. (ts)
+[36m															<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
+																{#if getFilteredMaterials(row.searchQuery, row.materialId, [35mdata.materials[36m).length === 0}
+																	<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1002:79
+[31mError[39m: Argument of type '{ id: number; name: string; unit: string; stock: number; up3Stock: number; hasStockRecord: boolean; }[] | undefined' is not assignable to parameter of type 'any[]'.
+  Type 'undefined' is not assignable to type 'any[]'. (ts)
+[36m																{:else}
+																	{#each getFilteredMaterials(row.searchQuery, row.materialId, [35mdata.materials[36m) as mat}
+																		<button[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1035:176
+[31mError[39m: Operator '>' cannot be applied to types 'string' and 'number'. (ts)
+[36m																min="1"
+																class="w-full border-b-2 border-gray-100 rounded px-1 py-1 text-sm text-center font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors {[35mrow.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0)[36m ? 'text-red-500 border-red-200 bg-red-50' : ''}"
+															>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1035:190
+[31mError[39m: 'data.materials' is possibly 'undefined'. (ts)
+[36m																min="1"
+																class="w-full border-b-2 border-gray-100 rounded px-1 py-1 text-sm text-center font-black text-[#0A417A] outline-none focus:border-cyan-500 transition-colors {row.jumlah > ([35mdata.materials[36m.find(m => m.id.toString() === row.materialId)?.stock || 0) ? 'text-red-500 border-red-200 bg-red-50' : ''}"
+															>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1037:76
+[31mError[39m: 'data.materials' is possibly 'undefined'. (ts)
+[36m															>
+															<span class="text-[10px] font-bold text-gray-400 truncate">{[35mdata.materials[36m.find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
+														</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1039:20
+[31mError[39m: Operator '>' cannot be applied to types 'string' and 'number'. (ts)
+[36m														</div>
+														{#if [35mrow.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0)[36m}
+															<span class="text-[8px] text-red-500 font-bold block mt-1 tracking-tighter">SISA: {data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0}</span>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1039:34
+[31mError[39m: 'data.materials' is possibly 'undefined'. (ts)
+[36m														</div>
+														{#if row.jumlah > ([35mdata.materials[36m.find(m => m.id.toString() === row.materialId)?.stock || 0)}
+															<span class="text-[8px] text-red-500 font-bold block mt-1 tracking-tighter">SISA: {data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0}</span>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1040:99
+[31mError[39m: 'data.materials' is possibly 'undefined'. (ts)
+[36m														{#if row.jumlah > (data.materials.find(m => m.id.toString() === row.materialId)?.stock || 0)}
+															<span class="text-[8px] text-red-500 font-bold block mt-1 tracking-tighter">SISA: {[35mdata.materials[36m.find(m => m.id.toString() === row.materialId)?.stock || 0}</span>
+														{/if}[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1140:46
+[31mError[39m: 'data.materials' is possibly 'undefined'. (ts)
+[36m															onfocus={() => { row.showDropdown = true; }}
+															onblur={() => handleBlur(row, [35mdata.materials[36m.filter(m => !m.hasStockRecord))}
+															required[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1146:76
+[31mError[39m: 'data.materials' is possibly 'undefined'. (ts)
+[36m															<div class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 text-xs">
+																{#if getFilteredMaterials(row.searchQuery, row.materialId, [35mdata.materials[36m.filter(m => !m.hasStockRecord)).length === 0}
+																	<div class="px-3 py-2 text-gray-400 italic text-center">Tidak ada material cocok</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1149:79
+[31mError[39m: 'data.materials' is possibly 'undefined'. (ts)
+[36m																{:else}
+																	{#each getFilteredMaterials(row.searchQuery, row.materialId, [35mdata.materials[36m.filter(m => !m.hasStockRecord)) as mat}
+																		<button[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\+page.svelte[39m:1183:81
+[31mError[39m: 'data.materials' is possibly 'undefined'. (ts)
+[36m															>
+															<span class="text-[10px] font-bold text-gray-400 truncate w-16">{[35mdata.materials[36m.find(m => m.id.toString() === row.materialId)?.unit || ''}</span>
+														</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\mutasi\[id]\bast\+page.svelte[39m:9:27
+[33mWarn[39m: This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally (svelte)
+[36m	// Format Date into Indonesian parts
+	const dateObj = new Date([35mdata[36m.trx.approvedDate || Date.now());
+	const hari = new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(dateObj).toUpperCase();[39m
+
+d:\inventory_plnup3\[32msrc\routes\usage-tracker\+page.svelte[39m:146:3
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m	<div class="mb-4">
+		[35m<label class="text-[10px] text-gray-400 mb-1.5 font-black uppercase tracking-widest pl-1 block">Cari Data:</label>[36m
+		<div class="relative">[39m
+
+d:\inventory_plnup3\[32msrc\routes\usage-tracker\+page.svelte[39m:164:4
+[33mWarn[39m: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+[36m		<div class="flex-1 w-full">
+			[35m<label class="text-[10px] text-white/90 mb-1.5 font-black uppercase tracking-widest pl-1 block">Tipe Transaksi:</label>[36m
+			<div class="flex bg-white/10 p-0.5 rounded-xl border border-white/20">[39m
+
+d:\inventory_plnup3\[32msrc\routes\usage-tracker\+page.svelte[39m:391:2
+[33mWarn[39m: Elements with the 'dialog' interactive role must have a tabindex value
+https://svelte.dev/e/a11y_interactive_supports_focus (svelte)
+[36m{#if showViewer}
+	[35m<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 md:p-10 backdrop-blur-sm" role="dialog" aria-modal="true" onclick={closeViewer}>
+		<button class="absolute top-6 right-6 text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all" onclick={closeViewer}>
+			<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+		</button>
+		
+		<div class="max-w-5xl w-full h-full flex flex-col items-center justify-center" onclick={(e) => e.stopPropagation()}>
+			{#if viewerBase64.startsWith('data:application/pdf')}
+				<iframe src={viewerBase64} class="w-full h-full rounded-xl shadow-2xl bg-white" title="Document Viewer"></iframe>
+			{:else}
+				<img src={viewerBase64} class="max-w-full max-h-full object-contain rounded-xl shadow-2xl" alt="Document Preview"/>
+			{/if}
+			
+			<div class="mt-4 flex gap-4">
+				<a href={viewerBase64} download="dokumen-pln.jpg" class="bg-[#FFD500] text-[#0A417A] px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:scale-105 transition-all flex items-center">
+					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4 4m4-4H8"></path></svg>
+					DOWNLOAD FILE
+				</a>
+				<button class="bg-white/10 text-white px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:bg-white/20 transition-all" onclick={closeViewer}>
+					TUTUP
+				</button>
+			</div>
+		</div>
+	</div>[36m
+{/if}[39m
+
+d:\inventory_plnup3\[32msrc\routes\usage-tracker\+page.svelte[39m:391:2
+[33mWarn[39m: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+[36m{#if showViewer}
+	[35m<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 md:p-10 backdrop-blur-sm" role="dialog" aria-modal="true" onclick={closeViewer}>
+		<button class="absolute top-6 right-6 text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all" onclick={closeViewer}>
+			<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+		</button>
+		
+		<div class="max-w-5xl w-full h-full flex flex-col items-center justify-center" onclick={(e) => e.stopPropagation()}>
+			{#if viewerBase64.startsWith('data:application/pdf')}
+				<iframe src={viewerBase64} class="w-full h-full rounded-xl shadow-2xl bg-white" title="Document Viewer"></iframe>
+			{:else}
+				<img src={viewerBase64} class="max-w-full max-h-full object-contain rounded-xl shadow-2xl" alt="Document Preview"/>
+			{/if}
+			
+			<div class="mt-4 flex gap-4">
+				<a href={viewerBase64} download="dokumen-pln.jpg" class="bg-[#FFD500] text-[#0A417A] px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:scale-105 transition-all flex items-center">
+					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4 4m4-4H8"></path></svg>
+					DOWNLOAD FILE
+				</a>
+				<button class="bg-white/10 text-white px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:bg-white/20 transition-all" onclick={closeViewer}>
+					TUTUP
+				</button>
+			</div>
+		</div>
+	</div>[36m
+{/if}[39m
+
+d:\inventory_plnup3\[32msrc\routes\usage-tracker\+page.svelte[39m:392:3
+[33mWarn[39m: Buttons and links should either contain text or have an `aria-label`, `aria-labelledby` or `title` attribute
+https://svelte.dev/e/a11y_consider_explicit_label (svelte)
+[36m	<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 md:p-10 backdrop-blur-sm" role="dialog" aria-modal="true" onclick={closeViewer}>
+		[35m<button class="absolute top-6 right-6 text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all" onclick={closeViewer}>
+			<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+		</button>[36m[39m
+
+d:\inventory_plnup3\[32msrc\routes\usage-tracker\+page.svelte[39m:396:3
+[33mWarn[39m: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+[36m		
+		[35m<div class="max-w-5xl w-full h-full flex flex-col items-center justify-center" onclick={(e) => e.stopPropagation()}>
+			{#if viewerBase64.startsWith('data:application/pdf')}
+				<iframe src={viewerBase64} class="w-full h-full rounded-xl shadow-2xl bg-white" title="Document Viewer"></iframe>
+			{:else}
+				<img src={viewerBase64} class="max-w-full max-h-full object-contain rounded-xl shadow-2xl" alt="Document Preview"/>
+			{/if}
+			
+			<div class="mt-4 flex gap-4">
+				<a href={viewerBase64} download="dokumen-pln.jpg" class="bg-[#FFD500] text-[#0A417A] px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:scale-105 transition-all flex items-center">
+					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4 4m4-4H8"></path></svg>
+					DOWNLOAD FILE
+				</a>
+				<button class="bg-white/10 text-white px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:bg-white/20 transition-all" onclick={closeViewer}>
+					TUTUP
+				</button>
+			</div>
+		</div>[36m
+	</div>[39m
+
+d:\inventory_plnup3\[32msrc\routes\usage-tracker\+page.svelte[39m:396:3
+[33mWarn[39m: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+[36m		
+		[35m<div class="max-w-5xl w-full h-full flex flex-col items-center justify-center" onclick={(e) => e.stopPropagation()}>
+			{#if viewerBase64.startsWith('data:application/pdf')}
+				<iframe src={viewerBase64} class="w-full h-full rounded-xl shadow-2xl bg-white" title="Document Viewer"></iframe>
+			{:else}
+				<img src={viewerBase64} class="max-w-full max-h-full object-contain rounded-xl shadow-2xl" alt="Document Preview"/>
+			{/if}
+			
+			<div class="mt-4 flex gap-4">
+				<a href={viewerBase64} download="dokumen-pln.jpg" class="bg-[#FFD500] text-[#0A417A] px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:scale-105 transition-all flex items-center">
+					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4 4m4-4H8"></path></svg>
+					DOWNLOAD FILE
+				</a>
+				<button class="bg-white/10 text-white px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:bg-white/20 transition-all" onclick={closeViewer}>
+					TUTUP
+				</button>
+			</div>
+		</div>[36m
+	</div>[39m
+
+====================================
+[31msvelte-check found 46 errors and 43 warnings in 9 files
+[39m

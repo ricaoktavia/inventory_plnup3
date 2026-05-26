@@ -332,7 +332,7 @@ export const actions: Actions = {
 			return { error: err.message };
 		});
 
-		if (result.error) return fail(400, { error: result.error });
+		if ('error' in result && result.error) return fail(400, { error: result.error });
 
 		return { success: true, message: 'Transfer Material Berhasil Diproses dan Selesai!' };
 	},
@@ -454,7 +454,7 @@ export const actions: Actions = {
 			return { error: err.message };
 		});
 
-		if (result.error) return fail(400, { error: result.error });
+		if ('error' in result && result.error) return fail(400, { error: result.error });
 
 		return { 
 			success: true, 
