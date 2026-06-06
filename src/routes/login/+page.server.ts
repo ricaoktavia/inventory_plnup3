@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions = {
-	default: async ({ request, cookies, url }) => {
+	default: async ({ request, cookies }) => {
 		const data = await request.formData();
 		const username = data.get('username')?.toString();
 		const password = data.get('password')?.toString();
@@ -34,7 +34,8 @@ export const actions = {
 			path: '/',
 			httpOnly: true,
 			sameSite: 'lax',
-			secure: url.protocol === 'https:',
+			// Deployment currently uses plain HTTP (:3000), so Secure cookies are ignored by browser.
+			secure: false,
 			maxAge: 60 * 60 * 24 * 7 // 1 week
 		});
 
