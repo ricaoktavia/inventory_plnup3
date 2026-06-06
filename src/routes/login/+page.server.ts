@@ -1,4 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
+import { base } from '$app/paths';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { users } from '$lib/server/db/schema';
@@ -7,12 +8,12 @@ import { eq } from 'drizzle-orm';
 export const load: PageServerLoad = async ({ locals }) => {
 	// If already logged in, redirect to dashboard
 	if (locals.user) {
-		throw redirect(302, '/');
+		throw redirect(303, `${base}/`);
 	}
 };
 
 export const actions = {
-	login: async ({ request, cookies, url }) => {
+	default: async ({ request, cookies, url }) => {
 		const data = await request.formData();
 		const username = data.get('username')?.toString();
 		const password = data.get('password')?.toString();
@@ -37,6 +38,6 @@ export const actions = {
 			maxAge: 60 * 60 * 24 * 7 // 1 week
 		});
 
-		throw redirect(302, '/');
+		throw redirect(303, `${base}/`);
 	}
 } satisfies Actions;

@@ -1,4 +1,5 @@
 import { redirect } from '@sveltejs/kit';
+import { base } from '$app/paths';
 import type { Actions } from './$types';
 
 export const actions: Actions = {
@@ -9,6 +10,6 @@ export const actions: Actions = {
 			sameSite: 'lax',
 			secure: url.protocol === 'https:'
 		});
-		throw redirect(302, '/login');
+		throw redirect(303, `${base}/login`);
 	}
 };

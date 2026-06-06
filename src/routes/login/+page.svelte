@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-
 	let { form } = $props();
 </script>
 
@@ -23,7 +21,7 @@
 			</p>
 		</div>
 
-		<form class="mt-8 space-y-6" action="?/login" method="POST" use:enhance>
+		<form class="mt-8 space-y-6" method="POST">
 			<input type="hidden" name="remember" value="true" />
 			<div class="rounded-md shadow-sm -space-y-px">
 				<div>
