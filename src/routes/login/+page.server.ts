@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions = {
-	login: async ({ request, cookies }) => {
+	login: async ({ request, cookies, url }) => {
 		const data = await request.formData();
 		const username = data.get('username')?.toString();
 		const password = data.get('password')?.toString();
@@ -33,7 +33,7 @@ export const actions = {
 			path: '/',
 			httpOnly: true,
 			sameSite: 'lax',
-			secure: false,
+			secure: url.protocol === 'https:',
 			maxAge: 60 * 60 * 24 * 7 // 1 week
 		});
 

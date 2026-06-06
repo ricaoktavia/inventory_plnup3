@@ -1,0 +1,26 @@
+name: Deploy VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: deploy to server
+        uses: fifsky/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          user: ${{ secrets.SSH_USERNAME }}
+          pass: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          command: |
+            cd /home/inventory_plnup3
+            git fetch --all
+            git reset --hard origin/main
+            npm run build
+            pm2 restart inventory_plnup3
