@@ -9,55 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
 
-      - name: SSH preflight debug (safe)
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        run: |
-          if [ -z "$SSH_HOST" ]; then
-            echo "ERROR: SSH_HOST is missing"
-            exit 1
-          fi
-
-          if [ -z "$SSH_USERNAME" ]; then
-            echo "ERROR: SSH_USERNAME is missing"
-            exit 1
-          fi
-
-          echo "SSH_HOST: set"
-          echo "SSH_USERNAME: set"
-
-          if [ -n "$SSH_PRIVATE_KEY" ]; then
-            echo "Auth mode selected: key"
-          elif [ -n "$SSH_PASSWORD" ]; then
-            echo "Auth mode selected: password"
-          else
-            echo "ERROR: neither SSH_PRIVATE_KEY nor SSH_PASSWORD is set"
-            exit 1
-          fi
-
-          if nc -z -w 5 "$SSH_HOST" 22; then
-            echo "Network check: TCP/22 reachable"
-          else
-            echo "WARNING: TCP/22 not reachable from GitHub runner"
-          fi
-
-      - name: deploy to server (password auth fallback)
+      - name: deploy to server
         uses: fifsky/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }}
+          user: ${{ secrets.SSH_USERNAME }}
+          pass: ${{ secrets.SSH_PASSWORD }}
           port: 22
-          script_stop: true
-          script: |
+          command: |
             cd /home/inventory_plnup3
             git fetch --all
             git reset --hard origin/main
-            npm ci
             npm run build
             pm2 restart inventory_plnup3
