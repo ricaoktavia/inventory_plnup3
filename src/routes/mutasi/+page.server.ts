@@ -172,25 +172,37 @@ export const actions: Actions = {
 			return fail(400, { error: 'Pilih minimal 1 material yang diajukan!' });
 		}
 
-		const refNumber = `REQ-${user.ulpId}-${Date.now()}`;
-		const [insertTrx] = await db.insert(transactions).values({
-			referenceNumber: refNumber,
-			type: 'DISTRIBUTION',
-			status: 'REQUESTED',
-			createdBy: user.id,
-			targetUlpId: user.ulpId,
-			takerName: takerName,
-			requestLetterBase64: letterBase64 || null
-		});
-
-		for (let i = 0; i < materialIds.length; i++) {
-			await db.insert(transactionDetails).values({
-				transactionId: insertTrx.insertId,
-				materialId: parseInt(materialIds[i] as string),
-				quantity: parseInt(jumlahs[i] as string),
-				description: keterangans[i] as string
+		const result = await db.transaction(async (tx) => {
+			const refNumber = `REQ-${user.ulpId}-${Date.now()}`;
+			const [insertTrx] = await tx.insert(transactions).values({
+				referenceNumber: refNumber,
+				type: 'DISTRIBUTION',
+				status: 'REQUESTED',
+				createdBy: user.id,
+				targetUlpId: user.ulpId,
+				takerName: takerName,
+				requestLetterBase64: letterBase64 || null
 			});
-		}
+
+			for (let i = 0; i < materialIds.length; i++) {
+				const matId = parseInt(materialIds[i] as string);
+				const qty = parseInt(jumlahs[i] as string);
+				
+				if (!matId || isNaN(qty) || qty <= 0) {
+					throw new Error('Data material tidak lengkap atau jumlah tidak valid.');
+				}
+
+				await tx.insert(transactionDetails).values({
+					transactionId: insertTrx.insertId,
+					materialId: matId,
+					quantity: qty,
+					description: keterangans[i] as string
+				});
+			}
+			return { success: true };
+		}).catch(err => ({ error: err.message }));
+
+		if ('error' in result && result.error) return fail(400, { error: result.error });
 
 		return { success: true, message: 'Permintaan Material Berhasil Diajukan!' };
 	},
@@ -379,7 +391,16 @@ export const actions: Actions = {
 		const usagePurpose = formData.get('usagePurpose') as string;
 		const takerName = formData.get('takerName') as string;
 		const targetStatus = formData.get('targetStatus') as string; // 'DRAFT' or 'COMPLETED'
-		const photoBase64 = formData.get('photoBase64') as string;
+		
+		const photoBase64Arr = formData.getAll('photoBase64[]');
+		const singlePhoto = formData.get('photoBase64') as string;
+		let photoDataToSave = null;
+		if (photoBase64Arr.length > 0) {
+			photoDataToSave = JSON.stringify(photoBase64Arr);
+		} else if (singlePhoto) {
+			photoDataToSave = JSON.stringify([singlePhoto]);
+		}
+
 		const materialIds = formData.getAll('materialId[]');
 		const jumlahs = formData.getAll('jumlah[]');
 		const keterangans = formData.getAll('keterangan[]');
@@ -389,7 +410,7 @@ export const actions: Actions = {
 		}
 
 		// BACKEND PHOTO EVIDEN VALIDATION FOR ULP
-		if (targetStatus === 'COMPLETED' && user.role === 'ADMIN_ULP' && !photoBase64) {
+		if (targetStatus === 'COMPLETED' && user.role === 'ADMIN_ULP' && !photoDataToSave) {
 			return fail(400, { error: 'Gagal! Foto bukti (eviden) wajib diunggah untuk konfirmasi pemakaian.' });
 		}
 
@@ -436,7 +457,7 @@ export const actions: Actions = {
 				targetUlpId: user.role === 'ADMIN_UP3' ? null : user.ulpId,
 				takerName: takerName,
 				usagePurpose: usagePurpose,
-				photoBase64: photoBase64 || null,
+				photoBase64: photoDataToSave,
 				createdAt: new Date(tanggal)
 			});
 
@@ -471,7 +492,15 @@ export const actions: Actions = {
 
 		const formData = await request.formData();
 		const trxId = formData.get('transactionId') as string;
-		const photoBase64 = formData.get('photoBase64') as string;
+		
+		const photoBase64Arr = formData.getAll('photoBase64[]');
+		const singlePhoto = formData.get('photoBase64') as string;
+		let photoDataToSave = null;
+		if (photoBase64Arr.length > 0) {
+			photoDataToSave = JSON.stringify(photoBase64Arr);
+		} else if (singlePhoto) {
+			photoDataToSave = JSON.stringify([singlePhoto]);
+		}
 
 		if (!trxId) return fail(400, { error: 'Pilih draf pemakaian!' });
 
@@ -491,7 +520,7 @@ export const actions: Actions = {
 
 		await db.update(transactions).set({
 			status: 'COMPLETED',
-			photoBase64: photoBase64 || null
+			photoBase64: photoDataToSave
 		}).where(eq(transactions.id, id));
 
 		return { success: true, message: 'Pemakaian Lapangan Selesai! Stok telah terpotong.' };
@@ -576,48 +605,52 @@ export const actions: Actions = {
 			return fail(400, { error: 'Pilih minimal 1 material!' });
 		}
 
-		if (user.role === 'ADMIN_UP3') {
-			const refNumber = `STOK-AWAL-UP3-${Date.now()}`;
-			const [insertTrx] = await db.insert(transactions).values({
-				referenceNumber: refNumber,
-				type: 'INITIAL_STOCK',
-				status: 'COMPLETED',
-				createdBy: user.id,
-				targetUlpId: null,
-				approvedAt: new Date()
-			});
-
-			for (let i = 0; i < materialIds.length; i++) {
-				const matId = parseInt(materialIds[i] as string);
-				const qty = parseInt(jumlahs[i] as string);
-
-				await db.insert(transactionDetails).values({
-					transactionId: insertTrx.insertId,
-					materialId: matId,
-					quantity: qty,
-					description: 'Input Stok Awal Pusat'
+		const result = await db.transaction(async (tx) => {
+			if (user.role === 'ADMIN_UP3') {
+				const refNumber = `STOK-AWAL-UP3-${Date.now()}`;
+				const [insertTrx] = await tx.insert(transactions).values({
+					referenceNumber: refNumber,
+					type: 'INITIAL_STOCK',
+					status: 'COMPLETED',
+					createdBy: user.id,
+					targetUlpId: null,
+					approvedAt: new Date()
 				});
 
-				// Update or Insert Stok UP3
-				const [up3Stock] = await db.select().from(stocks).where(and(eq(stocks.materialId, matId), isNull(stocks.ulpId)));
-				if (up3Stock) {
-					await db.update(stocks)
-						.set({ quantity: qty })
-						.where(eq(stocks.id, up3Stock.id));
-				} else {
-					await db.insert(stocks).values({
+				for (let i = 0; i < materialIds.length; i++) {
+					const matId = parseInt(materialIds[i] as string);
+					const qty = parseInt(jumlahs[i] as string);
+
+					if (!matId || isNaN(qty) || qty < 0) {
+						throw new Error('Data material tidak lengkap atau jumlah tidak valid.');
+					}
+
+					await tx.insert(transactionDetails).values({
+						transactionId: insertTrx.insertId,
 						materialId: matId,
-						ulpId: null,
-						quantity: qty
+						quantity: qty,
+						description: 'Input Stok Awal Pusat'
 					});
+
+					// Update or Insert Stok UP3
+					const [up3Stock] = await tx.select().from(stocks).where(and(eq(stocks.materialId, matId), isNull(stocks.ulpId)));
+					if (up3Stock) {
+						await tx.update(stocks)
+							.set({ quantity: qty })
+							.where(eq(stocks.id, up3Stock.id));
+					} else {
+						await tx.insert(stocks).values({
+							materialId: matId,
+							ulpId: null,
+							quantity: qty
+						});
+					}
 				}
-			}
-			return { success: true, message: 'Stok Awal Pusat Berhasil Disimpan!' };
-		} else {
-			const timestamp = Date.now();
-			for (let i = 0; i < materialIds.length; i++) {
-				const refNumber = `STOK-AWAL-${user.ulpId}-${timestamp}-${i}`;
-				const [insertTrx] = await db.insert(transactions).values({
+				return { success: true, message: 'Stok Awal Pusat Berhasil Disimpan!' };
+			} else {
+				const timestamp = Date.now();
+				const refNumber = `STOK-AWAL-${user.ulpId}-${timestamp}`;
+				const [insertTrx] = await tx.insert(transactions).values({
 					referenceNumber: refNumber,
 					type: 'INITIAL_STOCK',
 					status: 'REQUESTED',
@@ -625,16 +658,29 @@ export const actions: Actions = {
 					targetUlpId: user.ulpId
 				});
 
-				await db.insert(transactionDetails).values({
-					transactionId: insertTrx.insertId,
-					materialId: parseInt(materialIds[i] as string),
-					quantity: parseInt(jumlahs[i] as string),
-					description: 'Input Stok Awal ULP'
-				});
-			}
+				for (let i = 0; i < materialIds.length; i++) {
+					const matId = parseInt(materialIds[i] as string);
+					const qty = parseInt(jumlahs[i] as string);
 
-			return { success: true, message: 'Stok Awal Berhasil Diajukan (Menunggu Konfirmasi UP3)!' };
-		}
+					if (!matId || isNaN(qty) || qty < 0) {
+						throw new Error('Data material tidak lengkap atau jumlah tidak valid.');
+					}
+
+					await tx.insert(transactionDetails).values({
+						transactionId: insertTrx.insertId,
+						materialId: matId,
+						quantity: qty,
+						description: 'Input Stok Awal ULP'
+					});
+				}
+
+				return { success: true, message: 'Stok Awal Berhasil Diajukan (Menunggu Konfirmasi UP3)!' };
+			}
+		}).catch(err => ({ error: err.message }));
+
+		if ('error' in result && result.error) return fail(400, { error: result.error });
+
+		return result;
 	},
 
 	// (UP3) Konfirmasi Stok Awal

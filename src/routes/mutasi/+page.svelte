@@ -5,7 +5,8 @@
 
 	let { data, form } = $props();
 
-	let fileBase64 = $state(''); // For documentation photo (UP3) or installation photo (ULP)
+	let fileBase64 = $state(''); // For documentation photo (UP3)
+	let pemakaianPhotos = $state<string[]>([]); // For installation photo (ULP/UP3 usage)
 	let requestLetterBase64 = $state(''); // For request letter (ULP)
 	let isSubmitting = $state(false);
 
@@ -27,8 +28,12 @@
 			if (result.type === 'success') {
 				// Reset specific states based on the action
 				if (action.search.includes('minta')) requestLetterBase64 = '';
-				if (action.search.includes('draft') || action.search.includes('penggunaan')) {
+				if (action.search.includes('draft')) {
 					fileBase64 = '';
+					selectedRequestId = '';
+				}
+				if (action.search.includes('penggunaan')) {
+					pemakaianPhotos = [];
 					selectedRequestId = '';
 				}
 				if (action.search.includes('finalisasi')) {
@@ -98,28 +103,29 @@
 		});
 	}
 
-	async function handleFileChange(event: Event, type: 'PHOTO' | 'LETTER') {
+	async function handleFileChange(event: Event, type: 'PHOTO' | 'LETTER' | 'PEMAKAIAN') {
 		const input = event.target as HTMLInputElement;
-		if (input.files && input.files[0]) {
-			const file = input.files[0];
-			
-			// If it's an image, compress it
-			if (file.type.startsWith('image/')) {
-				try {
-					const result = await compressImage(file);
-					if (type === 'PHOTO') fileBase64 = result;
-					else requestLetterBase64 = result;
-				} catch (e) {
-					console.error('Compression failed:', e);
+		if (input.files && input.files.length > 0) {
+			for (let i = 0; i < input.files.length; i++) {
+				const file = input.files[i];
+				if (file.type.startsWith('image/')) {
+					try {
+						const result = await compressImage(file);
+						if (type === 'PHOTO') fileBase64 = result;
+						else if (type === 'LETTER') requestLetterBase64 = result;
+						else if (type === 'PEMAKAIAN') pemakaianPhotos = [...pemakaianPhotos, result];
+					} catch (e) {
+						console.error('Compression failed:', e);
+					}
+				} else {
+					const reader = new FileReader();
+					reader.onload = (e) => {
+						if (type === 'PHOTO') fileBase64 = e.target?.result as string;
+						else if (type === 'LETTER') requestLetterBase64 = e.target?.result as string;
+						else if (type === 'PEMAKAIAN') pemakaianPhotos = [...pemakaianPhotos, e.target?.result as string];
+					};
+					reader.readAsDataURL(file);
 				}
-			} else {
-				// For non-images (like PDF), use raw base64
-				const reader = new FileReader();
-				reader.onload = (e) => {
-					if (type === 'PHOTO') fileBase64 = e.target?.result as string;
-					else requestLetterBase64 = e.target?.result as string;
-				};
-				reader.readAsDataURL(file);
 			}
 		}
 	}
@@ -940,9 +946,9 @@
 						
 						<form method="POST" action="?/penggunaan" use:enhance={handleEnhance} onsubmit={(e) => {
 							const submitter = e.submitter as HTMLButtonElement | null;
-							if (submitter && submitter.value === 'COMPLETED' && !fileBase64) {
+							if (submitter && submitter.value === 'COMPLETED' && pemakaianPhotos.length === 0) {
 								e.preventDefault();
-								alert('Foto bukti (eviden) wajib diunggah untuk konfirmasi pemakaian!');
+								alert('Foto bukti (eviden) wajib diunggah minimal 1 gambar untuk konfirmasi pemakaian!');
 							}
 						}} class="space-y-6">
 							<!-- Header Info -->
@@ -1061,22 +1067,28 @@
 
 							<!-- Photo Upload Section -->
 							<div class="bg-blue-50 border-2 border-dashed border-blue-200 p-6 rounded-2xl flex flex-col items-center">
-								<p class="text-[10px] font-black text-blue-800 uppercase mb-4 italic tracking-widest text-center">Lampirkan Foto Bukti Pemasangan (Opsional untuk Draf, Wajib untuk Konfirmasi)</p>
-								<div class="flex items-center gap-6">
+								<p class="text-[10px] font-black text-blue-800 uppercase mb-4 italic tracking-widest text-center">Lampirkan Foto Bukti Pemasangan (Bisa lebih dari 1 gambar. Opsional untuk Draf, Wajib untuk Konfirmasi)</p>
+								<div class="flex flex-col items-center gap-4 w-full">
 									<label class="cursor-pointer bg-white text-blue-700 px-6 py-3 rounded-xl font-black border-2 border-blue-300 shadow-md inline-flex items-center hover:bg-blue-100 transition-all text-xs">
 										<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
 										AMBIL FOTO LAPANGAN
-										<input type="file" accept="image/*" capture="environment" class="hidden" onchange={(e) => handleFileChange(e, 'PHOTO')} />
+										<input type="file" accept="image/*" multiple capture="environment" class="hidden" onchange={(e) => handleFileChange(e, 'PEMAKAIAN')} />
 									</label>
-									{#if fileBase64}
-										<div class="flex items-center text-green-600 font-black italic text-xs animate-bounce">
-											<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-											Foto Terlampir
+									
+									{#if pemakaianPhotos.length > 0}
+										<div class="flex flex-wrap gap-3 justify-center w-full mt-2">
+											{#each pemakaianPhotos as photo, i}
+												<div class="relative inline-block">
+													<img src={photo} alt="Preview" class="h-24 w-24 object-cover rounded-lg border-2 border-green-300 shadow-sm" />
+													<button type="button" onclick={() => pemakaianPhotos = pemakaianPhotos.filter((_, idx) => idx !== i)} class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] hover:bg-red-600 shadow-md">✕</button>
+													<input type="hidden" name="photoBase64[]" value={photo}>
+												</div>
+											{/each}
 										</div>
+										<div class="text-green-600 font-black italic text-xs animate-bounce mt-2">✓ {pemakaianPhotos.length} Foto Terlampir</div>
 									{:else}
-										<div class="text-gray-400 font-bold italic text-xs">Belum ada foto</div>
+										<div class="text-gray-400 font-bold italic text-xs mt-2">Belum ada foto</div>
 									{/if}
-									<input type="hidden" name="photoBase64" value={fileBase64}>
 								</div>
 							</div>
 

@@ -50,7 +50,7 @@
 
 	// Finalization State
 	let finalizingId = $state<number | null>(null);
-	let photoBase64 = $state('');
+	let photoBase64s = $state<string[]>([]);
 	let isSubmitting = $state(false);
 
 	async function compressImage(file: File): Promise<string> {
@@ -82,9 +82,12 @@
 	}
 
 	async function handlePhotoUpload(e: Event) {
-		const file = (e.target as HTMLInputElement).files?.[0];
-		if (file) {
-			photoBase64 = await compressImage(file);
+		const files = (e.target as HTMLInputElement).files;
+		if (files && files.length > 0) {
+			for (let i = 0; i < files.length; i++) {
+				const compressed = await compressImage(files[i]);
+				photoBase64s = [...photoBase64s, compressed];
+			}
 		}
 	}
 
@@ -100,7 +103,7 @@
 			loadingState.stop();
 			if (result.type === 'success') {
 				finalizingId = null;
-				photoBase64 = '';
+				photoBase64s = [];
 			}
 			await update();
 		};
@@ -332,19 +335,27 @@
 							{#if finalizingId === trx.id}
 								<form method="POST" action="?/finalisasiPemakaian" use:enhance={handleEnhance} class="w-full flex flex-col gap-2">
 									<input type="hidden" name="transactionId" value={trx.id} />
-									<input type="hidden" name="photoBase64" value={photoBase64} />
 									<div class="flex items-center gap-2">
 										<label class="cursor-pointer bg-cyan-50 text-[#0092D1] hover:bg-cyan-100 border border-cyan-200 px-3 py-2 rounded-lg font-black text-[10px] inline-flex items-center transition-all">
-											📷 {photoBase64 ? 'GANTI FOTO' : 'AMBIL FOTO'}
-											<input type="file" accept="image/*" capture="environment" class="hidden" onchange={handlePhotoUpload} />
+											📷 {photoBase64s.length > 0 ? 'TAMBAH FOTO' : 'AMBIL FOTO'}
+											<input type="file" accept="image/*" multiple capture="environment" class="hidden" onchange={handlePhotoUpload} />
 										</label>
-										{#if photoBase64}
-											<span class="text-[9px] text-green-600 font-bold bg-green-50 border border-green-200 px-1.5 py-0.5 rounded">✓ Foto Siap</span>
+										{#if photoBase64s.length > 0}
+											<span class="text-[9px] text-green-600 font-bold bg-green-50 border border-green-200 px-1.5 py-0.5 rounded">✓ {photoBase64s.length} Foto Siap</span>
 										{/if}
-										<button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-black text-[10px] px-3 py-2 rounded-lg shadow-sm disabled:opacity-50" disabled={isSubmitting || (trx.targetUlpId !== null && !photoBase64)}>
+										<button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-black text-[10px] px-3 py-2 rounded-lg shadow-sm disabled:opacity-50" disabled={isSubmitting || (trx.targetUlpId !== null && photoBase64s.length === 0 && !trx.photo)}>
 											{isSubmitting ? '...' : 'SELESAIKAN'}
 										</button>
-										<button type="button" onclick={() => { finalizingId = null; photoBase64 = ''; }} class="text-[10px] text-gray-400 hover:text-gray-600 font-bold ml-auto">BATAL</button>
+										<button type="button" onclick={() => { finalizingId = null; photoBase64s = []; }} class="text-[10px] text-gray-400 hover:text-gray-600 font-bold ml-auto">BATAL</button>
+									</div>
+									<div class="flex flex-wrap gap-1 mt-1">
+										{#each photoBase64s as p, i}
+											<div class="relative">
+												<img src={p} class="w-10 h-10 object-cover rounded shadow-sm border border-gray-200" alt="Evident" />
+												<button type="button" onclick={() => photoBase64s = photoBase64s.filter((_, idx) => idx !== i)} class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px]">✕</button>
+												<input type="hidden" name="photoBase64[]" value={p} />
+											</div>
+										{/each}
 									</div>
 									{#if trx.targetUlpId !== null}
 										<span class="text-[9px] text-red-500 font-semibold">*Foto bukti (eviden) wajib diunggah untuk pemakaian ULP.</span>
@@ -353,7 +364,26 @@
 									{/if}
 								</form>
 							{:else}
-								<button onclick={() => finalizingId = trx.id} class="text-xs font-black text-cyan-600 hover:underline">Selesaikan Sekarang →</button>
+								<div class="flex items-center gap-3 w-full">
+									<button onclick={() => finalizingId = trx.id} class="text-xs font-black text-cyan-600 hover:underline mr-2">Selesaikan Sekarang →</button>
+									{#if trx.photo}
+										{@const photos = (typeof trx.photo === 'string' && trx.photo.startsWith('[')) ? JSON.parse(trx.photo) : [trx.photo]}
+										{#if photos.length === 1}
+											<button type="button" onclick={() => openViewer(photos[0])} class="text-xs font-bold text-gray-500 flex items-center hover:text-gray-700 underline decoration-dotted">
+												📦 Foto Bukti (Evident)
+											</button>
+										{:else}
+											<div class="flex items-center gap-1 flex-wrap">
+												<span class="text-[10px] text-gray-400 font-bold">📦 Foto Bukti:</span>
+												{#each photos as p, idx}
+													<button type="button" onclick={() => openViewer(p)} class="text-[10px] font-bold text-cyan-600 flex items-center hover:text-cyan-700 underline decoration-dotted bg-cyan-50 border border-cyan-100 px-1.5 py-0.5 rounded">
+														#{idx + 1}
+													</button>
+												{/each}
+											</div>
+										{/if}
+									{/if}
+								</div>
 							{/if}
 						{:else if trx.status === 'REQUESTED' && trx.type === 'INITIAL_STOCK' && data.userRole === 'ADMIN_ULP'}
 							<span class="text-[10px] text-gray-400 font-black italic">Menunggu Persetujuan UP3...</span>
@@ -361,9 +391,21 @@
 							<!-- Completed files viewing options -->
 							<div class="flex items-center gap-3">
 								{#if trx.photo}
-									<button type="button" onclick={() => openViewer(trx.photo)} class="text-xs font-bold text-gray-500 flex items-center hover:text-gray-700 underline decoration-dotted">
-										📦 Foto Bukti (Evident)
-									</button>
+									{@const photos = (typeof trx.photo === 'string' && trx.photo.startsWith('[')) ? JSON.parse(trx.photo) : [trx.photo]}
+									{#if photos.length === 1}
+										<button type="button" onclick={() => openViewer(photos[0])} class="text-xs font-bold text-gray-500 flex items-center hover:text-gray-700 underline decoration-dotted">
+											📦 Foto Bukti (Evident)
+										</button>
+									{:else}
+										<div class="flex items-center gap-1 flex-wrap">
+											<span class="text-[10px] text-gray-400 font-bold">📦 Foto Bukti:</span>
+											{#each photos as p, idx}
+												<button type="button" onclick={() => openViewer(p)} class="text-[10px] font-bold text-cyan-600 flex items-center hover:text-cyan-700 underline decoration-dotted bg-cyan-50 border border-cyan-100 px-1.5 py-0.5 rounded">
+													#{idx + 1}
+												</button>
+											{/each}
+										</div>
+									{/if}
 								{/if}
 								{#if trx.type === 'DISTRIBUTION'}
 									<a href="/mutasi/{trx.id}/bast" target="_blank" class="text-[10px] bg-gray-100 hover:bg-gray-200 text-[#0A417A] font-black px-3 py-1.5 rounded-lg border shadow-sm transition-all italic">LIAT BAST</a>

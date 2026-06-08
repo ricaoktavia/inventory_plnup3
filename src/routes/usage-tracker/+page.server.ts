@@ -77,7 +77,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const allUlps = user.role === 'ADMIN_UP3' ? await db.select().from(ulps) : [];
 
 	return {
-		usageHistory: Array.from(historyMap.values()),
+		usageHistory: Array.from(historyMap.values()).filter(t => t.items && t.items.length > 0),
 		ulps: allUlps,
 		userRole: user.role,
 		userUlpId: user.ulpId
@@ -92,7 +92,15 @@ export const actions: Actions = {
 
 		const formData = await request.formData();
 		const trxId = formData.get('transactionId') as string;
-		const photoBase64 = formData.get('photoBase64') as string;
+		
+		const photoBase64Arr = formData.getAll('photoBase64[]');
+		const singlePhoto = formData.get('photoBase64') as string;
+		let photoDataToSave = null;
+		if (photoBase64Arr.length > 0) {
+			photoDataToSave = JSON.stringify(photoBase64Arr);
+		} else if (singlePhoto) {
+			photoDataToSave = JSON.stringify([singlePhoto]);
+		}
 
 		if (!trxId) return fail(400, { error: 'Pilih draf pemakaian!' });
 
@@ -101,7 +109,8 @@ export const actions: Actions = {
 		if (!trx) return fail(404, { error: 'Transaksi tidak ditemukan.' });
 
 		// If ULP usage (targetUlpId is not null), photo is mandatory!
-		if (trx.targetUlpId !== null && !photoBase64) {
+		const finalPhotoDataToSave = photoDataToSave || trx.photoBase64;
+		if (trx.targetUlpId !== null && !finalPhotoDataToSave) {
 			return fail(400, { error: 'Foto bukti (eviden) wajib diunggah untuk pemakaian ULP.' });
 		}
 
@@ -120,7 +129,7 @@ export const actions: Actions = {
 
 		await db.update(transactions).set({
 			status: 'COMPLETED',
-			photoBase64: photoBase64 || null
+			photoBase64: finalPhotoDataToSave
 		}).where(eq(transactions.id, id));
 
 		return { success: true, message: 'Pemakaian Lapangan Selesai! Stok telah terpotong.' };
