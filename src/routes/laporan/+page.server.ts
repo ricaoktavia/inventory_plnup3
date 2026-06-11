@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
 import { materials, transactions, transactionDetails, ulps, stocks } from '$lib/server/db/schema';
-import { eq, and, lte, gte, lt, gt, or, isNull, sum, sql } from 'drizzle-orm';
+import { eq, and, lte, gte, gt, or, isNull, sql } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -19,7 +19,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const selectedYearStr = url.searchParams.get('year') || currentYear.toString();
 	const year = parseInt(selectedYearStr) || currentYear;
 
-	const yearsList = [];
+	const yearsList: number[] = [];
 	for (let y = currentYear - 3; y <= currentYear + 3; y++) {
 		yearsList.push(y);
 	}
@@ -30,13 +30,23 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const end = new Date(endDateStr);
 	end.setHours(23, 59, 59, 999);
 
-	// Get all materials
 	const allMaterials = await db.select().from(materials).orderBy(materials.name);
 	const allUlps = await db.select().from(ulps);
 
-	const reportData = [];
+	// ============================================================
+	// PENDEKATAN: BACKWARD CALCULATION dari currentStock
+	// ============================================================
+	// Tabel `stocks` SELALU akurat (diupdate atomik setiap transaksi).
+	// Termasuk INITIAL_STOCK yang langsung SET nilai stok di tabel ini.
+	//
+	// Rumus backward:
+	//   stok_akhir_periode = currentStock + keluar_pasca_periode - masuk_pasca_periode
+	//   stok_awal_periode  = stok_akhir_periode - masuk_periode + keluar_periode
+	//
+	// Tidak perlu menangani INITIAL_STOCK secara khusus sama sekali.
+	// ============================================================
 
-	// Fetch current stocks to anchor calculations
+	// 1. Stok saat ini (dari tabel stocks — sumber kebenaran)
 	const currentStocks = await db
 		.select()
 		.from(stocks)
@@ -44,24 +54,22 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			selectedUlpId === 'up3' ? isNull(stocks.ulpId) : eq(stocks.ulpId, parseInt(selectedUlpId))
 		);
 
-	const currentStockMap = new Map();
+	const currentStockMap = new Map<number, number>();
 	currentStocks.forEach((row) => {
 		currentStockMap.set(row.materialId, Number(row.quantity || 0));
 	});
 
-	let periodRows = [];
-	let pastRows = [];
+	// 2. Transaksi IN periode & SETELAH periode
+	let periodRows: { materialId: number; masuk: number; keluar: number }[] = [];
+	let afterRows: { materialId: number; masuk: number; keluar: number }[] = [];
 
 	if (selectedUlpId === 'up3') {
-		// UP3 Logic
-		// INITIAL_STOCK & INCOMING hanya dari transaksi UP3 (targetUlpId IS NULL)
-		// DISTRIBUTION (keluar ke ULP) & USAGE UP3 juga dihitung sebagai outgoing
+		// UP3: masuk = INCOMING, keluar = DISTRIBUTION (ke ULP) + USAGE (tanpa target ULP)
 		periodRows = await db
 			.select({
 				materialId: transactionDetails.materialId,
-				initial: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INITIAL_STOCK' AND ${transactions.targetUlpId} IS NULL THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' AND ${transactions.targetUlpId} IS NULL THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' OR (${transactions.type} = 'USAGE' AND ${transactions.targetUlpId} IS NULL) THEN ${transactionDetails.quantity} ELSE 0 END)`
+				masuk: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' THEN ${transactionDetails.quantity} ELSE 0 END)`,
+				keluar: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' OR (${transactions.type} = 'USAGE' AND ${transactions.targetUlpId} IS NULL) THEN ${transactionDetails.quantity} ELSE 0 END)`
 			})
 			.from(transactions)
 			.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
@@ -70,46 +78,36 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 					gte(transactions.createdAt, start),
 					lte(transactions.createdAt, end),
 					eq(transactions.status, 'COMPLETED'),
-					or(
-						isNull(transactions.targetUlpId),
-						eq(transactions.type, 'DISTRIBUTION')
-					)
+					or(isNull(transactions.targetUlpId), eq(transactions.type, 'DISTRIBUTION'))
 				)
 			)
 			.groupBy(transactionDetails.materialId);
 
-		pastRows = await db
+		afterRows = await db
 			.select({
 				materialId: transactionDetails.materialId,
-				initial: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INITIAL_STOCK' AND ${transactions.targetUlpId} IS NULL THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' AND ${transactions.targetUlpId} IS NULL THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' OR (${transactions.type} = 'USAGE' AND ${transactions.targetUlpId} IS NULL) THEN ${transactionDetails.quantity} ELSE 0 END)`
+				masuk: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' THEN ${transactionDetails.quantity} ELSE 0 END)`,
+				keluar: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' OR (${transactions.type} = 'USAGE' AND ${transactions.targetUlpId} IS NULL) THEN ${transactionDetails.quantity} ELSE 0 END)`
 			})
 			.from(transactions)
 			.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
 			.where(
 				and(
-					lt(transactions.createdAt, start),
+					gt(transactions.createdAt, end),
 					eq(transactions.status, 'COMPLETED'),
-					or(
-						isNull(transactions.targetUlpId),
-						eq(transactions.type, 'DISTRIBUTION')
-					)
+					or(isNull(transactions.targetUlpId), eq(transactions.type, 'DISTRIBUTION'))
 				)
 			)
 			.groupBy(transactionDetails.materialId);
 	} else {
-		// ULP Logic
+		// ULP: masuk = DISTRIBUTION dari UP3 ke ULP ini, keluar = USAGE oleh ULP ini
 		const ulpId = parseInt(selectedUlpId as string);
 
-		// PENTING: INITIAL_STOCK ULP bisa berstatus REQUESTED (belum diapprove UP3) atau COMPLETED (sudah diapprove).
-		// Keduanya harus ditangkap agar stok awal ULP muncul di laporan.
 		periodRows = await db
 			.select({
 				materialId: transactionDetails.materialId,
-				initial: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INITIAL_STOCK' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' AND ${transactions.status} = 'COMPLETED' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' AND ${transactions.status} = 'COMPLETED' THEN ${transactionDetails.quantity} ELSE 0 END)`
+				masuk: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' AND ${transactions.status} = 'COMPLETED' THEN ${transactionDetails.quantity} ELSE 0 END)`,
+				keluar: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' AND ${transactions.status} = 'COMPLETED' THEN ${transactionDetails.quantity} ELSE 0 END)`
 			})
 			.from(transactions)
 			.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
@@ -117,95 +115,72 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				and(
 					gte(transactions.createdAt, start),
 					lte(transactions.createdAt, end),
-					eq(transactions.targetUlpId, ulpId),
-					or(
-						// Tangkap semua status untuk INITIAL_STOCK (REQUESTED belum diapprove, COMPLETED sudah)
-						eq(transactions.type, 'INITIAL_STOCK'),
-						// Selain INITIAL_STOCK, hanya yang COMPLETED
-						eq(transactions.status, 'COMPLETED')
-					)
+					eq(transactions.targetUlpId, ulpId)
 				)
 			)
 			.groupBy(transactionDetails.materialId);
 
-		pastRows = await db
+		afterRows = await db
 			.select({
 				materialId: transactionDetails.materialId,
-				initial: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INITIAL_STOCK' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' AND ${transactions.status} = 'COMPLETED' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' AND ${transactions.status} = 'COMPLETED' THEN ${transactionDetails.quantity} ELSE 0 END)`
+				masuk: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' AND ${transactions.status} = 'COMPLETED' THEN ${transactionDetails.quantity} ELSE 0 END)`,
+				keluar: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' AND ${transactions.status} = 'COMPLETED' THEN ${transactionDetails.quantity} ELSE 0 END)`
 			})
 			.from(transactions)
 			.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
-			.where(
-				and(
-					lt(transactions.createdAt, start),
-					eq(transactions.targetUlpId, ulpId),
-					or(
-						// Tangkap semua status untuk INITIAL_STOCK
-						eq(transactions.type, 'INITIAL_STOCK'),
-						// Selain INITIAL_STOCK, hanya yang COMPLETED
-						eq(transactions.status, 'COMPLETED')
-					)
-				)
-			)
+			.where(and(gt(transactions.createdAt, end), eq(transactions.targetUlpId, ulpId)))
 			.groupBy(transactionDetails.materialId);
 	}
 
-	const pastMap = new Map();
-	pastRows.forEach((row) => {
-		pastMap.set(row.materialId, {
-			initial: Number(row.initial || 0),
-			incoming: Number(row.incoming || 0),
-			outgoing: Number(row.outgoing || 0)
-		});
-	});
-
-	const periodMap = new Map();
+	const periodMap = new Map<number, { masuk: number; keluar: number }>();
 	periodRows.forEach((row) => {
 		periodMap.set(row.materialId, {
-			initial: Number(row.initial || 0),
-			incoming: Number(row.incoming || 0),
-			outgoing: Number(row.outgoing || 0)
+			masuk: Number(row.masuk || 0),
+			keluar: Number(row.keluar || 0)
 		});
 	});
 
+	const afterMap = new Map<number, { masuk: number; keluar: number }>();
+	afterRows.forEach((row) => {
+		afterMap.set(row.materialId, {
+			masuk: Number(row.masuk || 0),
+			keluar: Number(row.keluar || 0)
+		});
+	});
+
+	// Kumpulkan semua materialId yang relevan
+	const relevantMaterialIds = new Set<number>([
+		...currentStockMap.keys(),
+		...periodMap.keys(),
+		...afterMap.keys()
+	]);
+
+	const reportData: {
+		id: number;
+		name: string;
+		unit: string;
+		awal: number;
+		masuk: number;
+		keluar: number;
+		akhir: number;
+	}[] = [];
+
 	for (const mat of allMaterials) {
-		const past = pastMap.get(mat.id) || { initial: 0, incoming: 0, outgoing: 0 };
-		const period = periodMap.get(mat.id) || { initial: 0, incoming: 0, outgoing: 0 };
+		if (!relevantMaterialIds.has(mat.id)) continue;
 
-		// Hitung saldo historis sebelum periode:
-		// INITIAL_STOCK adalah posisi stok absolut (set ulang), bukan akumulatif.
-		// Jika ada INITIAL_STOCK di masa lampau, gunakan stok awal terakhir + transaksi setelahnya.
-		// Jika tidak ada INITIAL_STOCK, saldo = incoming - outgoing.
-		let pastBalance: number;
-		if (past.initial > 0) {
-			// Ada input stok awal di masa lampau: saldo = stok_awal + masuk_setelahnya - keluar_setelahnya
-			pastBalance = past.initial + past.incoming - past.outgoing;
-		} else {
-			// Tidak ada input stok awal di masa lampau: saldo hanya dari transaksi
-			pastBalance = past.incoming - past.outgoing;
-		}
+		const currentStock = currentStockMap.get(mat.id) || 0;
+		const period = periodMap.get(mat.id) || { masuk: 0, keluar: 0 };
+		const after = afterMap.get(mat.id) || { masuk: 0, keluar: 0 };
 
-		// Stok Awal Laporan:
-		// Jika ada INITIAL_STOCK di dalam periode (misalnya input stok awal di bulan ini),
-		// maka INITIAL_STOCK itu MENGGANTIKAN saldo sebelumnya, bukan ditambahkan.
-		// Karena INITIAL_STOCK = set ulang posisi stok fisik.
-		let awal: number;
-		if (period.initial > 0) {
-			// Input stok awal dalam periode ini: gunakan sebagai stok awal (reset)
-			awal = period.initial;
-		} else {
-			// Tidak ada input stok awal dalam periode: gunakan saldo dari historis
-			awal = pastBalance;
-		}
+		// stok_akhir_periode = stok_sekarang + keluar_pasca_periode - masuk_pasca_periode
+		const akhir = currentStock + after.keluar - after.masuk;
 
-		const masuk = period.incoming;
-		const keluar = period.outgoing;
-		const akhir = awal + masuk - keluar;
+		// stok_awal = stok_akhir - masuk_dalam_periode + keluar_dalam_periode
+		const masuk = period.masuk;
+		const keluar = period.keluar;
+		const awal = akhir - masuk + keluar;
 
-		// Tampilkan material jika ada aktivitas atau ada sisa saldo
-		if (awal !== 0 || masuk !== 0 || keluar !== 0 || akhir !== 0) {
+		if (awal !== 0 || masuk !== 0 || keluar !== 0 || akhir !== 0 || currentStock !== 0) {
 			reportData.push({
 				id: mat.id,
 				name: mat.name,
@@ -218,17 +193,17 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		}
 	}
 
-	// Calculate monthly usage trends (for Jan-Dec of current year)
-	const conditions = [
+	// Tren pemakaian bulanan (Jan–Des)
+	const conditions: ReturnType<typeof eq>[] = [
 		eq(transactions.type, 'USAGE'),
 		eq(transactions.status, 'COMPLETED'),
-		sql`YEAR(${transactions.createdAt}) = ${year}`
+		sql`YEAR(${transactions.createdAt}) = ${year}` as any
 	];
 
 	if (selectedUlpId === 'up3') {
-		conditions.push(isNull(transactions.targetUlpId));
+		conditions.push(isNull(transactions.targetUlpId) as any);
 	} else {
-		conditions.push(eq(transactions.targetUlpId, parseInt(selectedUlpId || '')));
+		conditions.push(eq(transactions.targetUlpId, parseInt(selectedUlpId || '')) as any);
 	}
 
 	const usageRows = await db
@@ -242,7 +217,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.where(and(...conditions))
 		.groupBy(transactionDetails.materialId, sql`MONTH(${transactions.createdAt})`);
 
-	const monthlyUsageMap = new Map();
+	const monthlyUsageMap = new Map<number, Record<number, number>>();
 	usageRows.forEach((row) => {
 		const matId = row.materialId;
 		const month = Number(row.month);
@@ -250,22 +225,28 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		if (!monthlyUsageMap.has(matId)) {
 			monthlyUsageMap.set(matId, {});
 		}
-		monthlyUsageMap.get(matId)[month] = qty;
+		monthlyUsageMap.get(matId)![month] = qty;
 	});
 
-	const monthlyUsageData = [];
+	const monthlyUsageData: {
+		id: number;
+		name: string;
+		unit: string;
+		months: number[];
+		total: number;
+		avg: number;
+	}[] = [];
+
 	for (const mat of allMaterials) {
 		const monthsObj = monthlyUsageMap.get(mat.id) || {};
 		let total = 0;
-		const monthlyValues = [];
+		const monthlyValues: number[] = [];
 		for (let m = 1; m <= 12; m++) {
 			const val = monthsObj[m] || 0;
 			monthlyValues.push(val);
 			total += val;
 		}
-
 		const avg = Number((total / 12).toFixed(2));
-
 		if (total > 0) {
 			monthlyUsageData.push({
 				id: mat.id,
