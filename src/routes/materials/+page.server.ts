@@ -153,7 +153,7 @@ export const actions: Actions = {
 				transactionId: insertTrx.insertId,
 				materialId: materialId,
 				quantity: diff,
-				description: 'Penyesuaian Stok (Koreksi Tambah)'
+				description: `Penyesuaian Stok (Koreksi Tambah dari ${oldQty} menjadi ${quantity})`
 			});
 		}
 

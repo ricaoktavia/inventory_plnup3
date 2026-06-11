@@ -34,6 +34,12 @@
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </svelte:head>
 
+<svelte:window onwheel={(e) => {
+	if (document.activeElement?.type === 'number') {
+		document.activeElement.blur();
+	}
+}} />
+
 {#if isBlankPage}
 	<div class="font-['Inter',sans-serif] min-h-screen bg-[#F5F7FA] text-gray-800 flex flex-col">
 		{@render children()}
