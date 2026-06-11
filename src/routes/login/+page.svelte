@@ -26,7 +26,7 @@
 			<div class="rounded-md shadow-sm -space-y-px">
 				<div>
 					<label for="username" class="sr-only">Username</label>
-					<input id="username" name="username" type="text" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 focus:z-10 sm:text-sm" placeholder="Username (misal: admin_up3 atau ulp_bangkalan)">
+					<input id="username" name="username" type="text" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 focus:z-10 sm:text-sm" placeholder="Username">
 				</div>
 				<div>
 					<label for="password" class="sr-only">Password</label>
