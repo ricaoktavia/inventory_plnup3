@@ -33,19 +33,39 @@
 		})
 	);
 
+	// Pagination
+	let currentPage = $state(1);
+	const itemsPerPage = 20;
+
+	$effect(() => {
+		// Reset to page 1 when any filter changes
+		searchQuery;
+		selectedUlpFilter;
+		typeFilter;
+		currentPage = 1;
+	});
+
+	let paginatedHistory = $derived(
+		filteredHistory.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+	);
+	
+	let totalPages = $derived(
+		Math.max(1, Math.ceil(filteredHistory.length / itemsPerPage))
+	);
+
 	// Lightbox Viewer Modal State
-	let viewerBase64 = $state(''); // Data URL of file to view
+	let viewerImages = $state<string[]>([]);
 	let showViewer = $state(false);
 
-	function openViewer(dataUrl: string) {
-		if (!dataUrl) return;
-		viewerBase64 = dataUrl;
+	function openViewer(dataUrls: string | string[]) {
+		if (!dataUrls || (Array.isArray(dataUrls) && dataUrls.length === 0)) return;
+		viewerImages = Array.isArray(dataUrls) ? dataUrls : [dataUrls];
 		showViewer = true;
 	}
 
 	function closeViewer() {
 		showViewer = false;
-		viewerBase64 = '';
+		viewerImages = [];
 	}
 
 	// Finalization State
@@ -217,7 +237,7 @@
 			Belum ada data riwayat transaksi yang cocok.
 		</div>
 	{:else}
-		{#each filteredHistory as trx}
+		{#each paginatedHistory as trx}
 			<div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm relative transition-all hover:shadow-md flex flex-col justify-between {trx.status === 'COMPLETED' ? '' : 'bg-gray-50/50 border-dashed'}">
 				<div>
 					<!-- Floating Status Badge -->
@@ -368,20 +388,9 @@
 									<button onclick={() => finalizingId = trx.id} class="text-xs font-black text-cyan-600 hover:underline mr-2">Selesaikan Sekarang →</button>
 									{#if trx.photo}
 										{@const photos = (typeof trx.photo === 'string' && trx.photo.startsWith('[')) ? JSON.parse(trx.photo) : [trx.photo]}
-										{#if photos.length === 1}
-											<button type="button" onclick={() => openViewer(photos[0])} class="text-xs font-bold text-gray-500 flex items-center hover:text-gray-700 underline decoration-dotted">
-												📦 Foto Bukti (Evident)
-											</button>
-										{:else}
-											<div class="flex items-center gap-1 flex-wrap">
-												<span class="text-[10px] text-gray-400 font-bold">📦 Foto Bukti:</span>
-												{#each photos as p, idx}
-													<button type="button" onclick={() => openViewer(p)} class="text-[10px] font-bold text-cyan-600 flex items-center hover:text-cyan-700 underline decoration-dotted bg-cyan-50 border border-cyan-100 px-1.5 py-0.5 rounded">
-														#{idx + 1}
-													</button>
-												{/each}
-											</div>
-										{/if}
+										<button type="button" onclick={() => openViewer(photos)} class="text-xs font-bold text-gray-500 flex items-center hover:text-gray-700 underline decoration-dotted">
+											📦 {photos.length > 1 ? `Semua Foto Bukti (${photos.length})` : 'Foto Bukti (Eviden)'}
+										</button>
 									{/if}
 								</div>
 							{/if}
@@ -392,20 +401,9 @@
 							<div class="flex items-center gap-3">
 								{#if trx.photo}
 									{@const photos = (typeof trx.photo === 'string' && trx.photo.startsWith('[')) ? JSON.parse(trx.photo) : [trx.photo]}
-									{#if photos.length === 1}
-										<button type="button" onclick={() => openViewer(photos[0])} class="text-xs font-bold text-gray-500 flex items-center hover:text-gray-700 underline decoration-dotted">
-											📦 Foto Bukti (Evident)
-										</button>
-									{:else}
-										<div class="flex items-center gap-1 flex-wrap">
-											<span class="text-[10px] text-gray-400 font-bold">📦 Foto Bukti:</span>
-											{#each photos as p, idx}
-												<button type="button" onclick={() => openViewer(p)} class="text-[10px] font-bold text-cyan-600 flex items-center hover:text-cyan-700 underline decoration-dotted bg-cyan-50 border border-cyan-100 px-1.5 py-0.5 rounded">
-													#{idx + 1}
-												</button>
-											{/each}
-										</div>
-									{/if}
+									<button type="button" onclick={() => openViewer(photos)} class="text-xs font-bold text-gray-500 flex items-center hover:text-gray-700 underline decoration-dotted">
+										📦 {photos.length > 1 ? `Semua Foto Bukti (${photos.length})` : 'Foto Bukti (Eviden)'}
+									</button>
 								{/if}
 								{#if trx.type === 'DISTRIBUTION'}
 									<a href="/mutasi/{trx.id}/bast" target="_blank" class="text-[10px] bg-gray-100 hover:bg-gray-200 text-[#0A417A] font-black px-3 py-1.5 rounded-lg border shadow-sm transition-all italic">LIAT BAST</a>
@@ -416,9 +414,8 @@
 						{/if}
 					</div>
 
-					<!-- Request Letter display button if present -->
 					{#if trx.requestLetter}
-						<button type="button" onclick={() => openViewer(trx.requestLetter)} class="text-[10px] font-bold text-cyan-600 flex items-center hover:text-cyan-700 bg-cyan-50 px-2 py-1 rounded border border-cyan-100 shrink-0">
+						<button type="button" onclick={() => openViewer([trx.requestLetter])} class="text-[10px] font-bold text-cyan-600 flex items-center hover:text-cyan-700 bg-cyan-50 px-2 py-1 rounded border border-cyan-100 shrink-0">
 							📄 Surat
 						</button>
 					{/if}
@@ -428,29 +425,51 @@
 	{/if}
 </div>
 
+<!-- Pagination Controls -->
+{#if filteredHistory.length > itemsPerPage}
+	<div class="max-w-[1200px] mx-auto w-full mt-8 flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+		<button 
+			class="px-4 py-2 bg-gray-50 text-gray-700 font-bold text-sm rounded-lg border border-gray-200 hover:bg-gray-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+			disabled={currentPage === 1}
+			onclick={() => currentPage -= 1}
+		>
+			← Sebelumnya
+		</button>
+		<p class="text-xs font-bold text-gray-500">Halaman <span class="text-[#0A417A] text-sm">{currentPage}</span> dari {totalPages}</p>
+		<button 
+			class="px-4 py-2 bg-[#0A417A] text-white font-bold text-sm rounded-lg shadow-sm hover:bg-blue-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+			disabled={currentPage >= totalPages}
+			onclick={() => currentPage += 1}
+		>
+			Selanjutnya →
+		</button>
+	</div>
+{/if}
+
 <!-- Lightbox Viewer Modal -->
 {#if showViewer}
 	<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 md:p-10 backdrop-blur-sm" role="dialog" aria-modal="true" onclick={closeViewer}>
-		<button class="absolute top-6 right-6 text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all" onclick={closeViewer}>
+		<button class="absolute top-6 right-6 text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all z-10" onclick={closeViewer}>
 			<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
 		</button>
 		
-		<div class="max-w-5xl w-full h-full flex flex-col items-center justify-center" onclick={(e) => e.stopPropagation()}>
-			{#if viewerBase64.startsWith('data:application/pdf')}
-				<iframe src={viewerBase64} class="w-full h-full rounded-xl shadow-2xl bg-white" title="Document Viewer"></iframe>
-			{:else}
-				<img src={viewerBase64} class="max-w-full max-h-full object-contain rounded-xl shadow-2xl" alt="Document Preview"/>
-			{/if}
-			
-			<div class="mt-4 flex gap-4">
-				<a href={viewerBase64} download="dokumen-pln.jpg" class="bg-[#FFD500] text-[#0A417A] px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:scale-105 transition-all flex items-center">
-					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4 4m4-4H8"></path></svg>
-					DOWNLOAD FILE
-				</a>
-				<button class="bg-white/10 text-white px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:bg-white/20 transition-all" onclick={closeViewer}>
-					TUTUP
-				</button>
-			</div>
+		<div class="max-w-5xl w-full h-[90vh] overflow-y-auto flex flex-col items-center gap-8 py-8 custom-scroll" onclick={(e) => e.stopPropagation()}>
+			{#each viewerImages as image, idx}
+				<div class="flex flex-col items-center gap-4 bg-white/5 p-4 rounded-xl w-full relative">
+					{#if image.startsWith('data:application/pdf')}
+						<iframe src={image} class="w-full h-[70vh] rounded-xl shadow-2xl bg-white" title="Document Viewer {idx + 1}"></iframe>
+					{:else}
+						<img src={image} class="max-w-full max-h-[70vh] object-contain rounded-xl shadow-2xl" alt="Document Preview {idx + 1}"/>
+					{/if}
+					
+					<div class="mt-2 flex gap-4">
+						<a href={image} download="dokumen-pln-{idx + 1}.jpg" class="bg-[#FFD500] text-[#0A417A] px-6 py-2 rounded-lg font-black text-sm shadow-xl hover:scale-105 transition-all flex items-center">
+							<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4 4m4-4H8"></path></svg>
+							DOWNLOAD FOTO {viewerImages.length > 1 ? `#${idx + 1}` : ''}
+						</a>
+					</div>
+				</div>
+			{/each}
 		</div>
 	</div>
 {/if}

@@ -683,13 +683,16 @@ export const actions: Actions = {
 		return result;
 	},
 
-	// (UP3) Konfirmasi Stok Awal
-	konfirmasiStokAwal: async ({ request, locals }) => {
+	// (UP3) Proses Stok Awal (Terima Sebagian/Semua atau Tolak)
+	prosesStokAwal: async ({ request, locals }) => {
 		const user = locals.user;
 		if (user?.role !== 'ADMIN_UP3') return fail(403, { error: 'Akses ditolak.' });
 
 		const formData = await request.formData();
 		const trxId = formData.get('transactionId') as string;
+		const actionType = formData.get('actionType') as string; // 'ACCEPT' or 'REJECT'
+		const acceptedMaterials = formData.getAll('acceptedMaterials[]'); // array of materialIds
+		
 		if (!trxId) return fail(400, { error: 'ID Transaksi tidak valid.' });
 
 		const [trx] = await db.select().from(transactions).where(eq(transactions.id, parseInt(trxId)));
@@ -697,25 +700,42 @@ export const actions: Actions = {
 			return fail(400, { error: 'Transaksi tidak valid.' });
 		}
 
+		if (actionType === 'REJECT') {
+			await db.update(transactions)
+				.set({ status: 'REJECTED' })
+				.where(eq(transactions.id, trx.id));
+			return { success: true, message: 'Stok Awal ULP telah ditolak secara keseluruhan.' };
+		}
+
+		// Process Partial or Full Accept
 		const details = await db.select().from(transactionDetails).where(eq(transactionDetails.transactionId, trx.id));
 		if (details.length === 0) {
 			return fail(400, { error: 'Detail transaksi stok awal tidak ditemukan.' });
 		}
 
-		// Update or Insert Stok ULP
+		if (acceptedMaterials.length === 0) {
+			return fail(400, { error: 'Gagal! Tidak ada material yang dicentang untuk diterima. Gunakan Tolak Semua jika ingin menolak.' });
+		}
+
+		// Update or Insert Stok ULP for ACCEPTED materials
 		for (const detail of details) {
-			const [ulpStock] = await db.select().from(stocks).where(and(eq(stocks.materialId, detail.materialId), eq(stocks.ulpId, trx.targetUlpId!)));
-			
-			if (ulpStock) {
-				await db.update(stocks)
-					.set({ quantity: detail.quantity }) // Set to exactly what was inputted
-					.where(eq(stocks.id, ulpStock.id));
+			if (acceptedMaterials.includes(detail.materialId.toString())) {
+				const [ulpStock] = await db.select().from(stocks).where(and(eq(stocks.materialId, detail.materialId), eq(stocks.ulpId, trx.targetUlpId!)));
+				
+				if (ulpStock) {
+					await db.update(stocks)
+						.set({ quantity: detail.quantity }) // Set to exactly what was inputted
+						.where(eq(stocks.id, ulpStock.id));
+				} else {
+					await db.insert(stocks).values({
+						materialId: detail.materialId,
+						ulpId: trx.targetUlpId!,
+						quantity: detail.quantity
+					});
+				}
 			} else {
-				await db.insert(stocks).values({
-					materialId: detail.materialId,
-					ulpId: trx.targetUlpId!,
-					quantity: detail.quantity
-				});
+				// Rejected material: Remove from transaction details so it doesn't show up as accepted
+				await db.delete(transactionDetails).where(eq(transactionDetails.id, detail.id));
 			}
 		}
 
@@ -723,28 +743,7 @@ export const actions: Actions = {
 			.set({ status: 'COMPLETED', approvedAt: new Date() })
 			.where(eq(transactions.id, trx.id));
 
-		return { success: true, message: 'Stok Awal Berhasil Dikonfirmasi! Stok ULP telah diperbarui.' };
-	},
-
-	// (UP3) Tolak Stok Awal
-	tolakStokAwal: async ({ request, locals }) => {
-		const user = locals.user;
-		if (user?.role !== 'ADMIN_UP3') return fail(403, { error: 'Akses ditolak.' });
-
-		const formData = await request.formData();
-		const trxId = formData.get('transactionId') as string;
-		if (!trxId) return fail(400, { error: 'ID Transaksi tidak valid.' });
-
-		const [trx] = await db.select().from(transactions).where(eq(transactions.id, parseInt(trxId)));
-		if (!trx || trx.status !== 'REQUESTED' || trx.type !== 'INITIAL_STOCK') {
-			return fail(400, { error: 'Transaksi tidak valid.' });
-		}
-
-		await db.update(transactions)
-			.set({ status: 'REJECTED' })
-			.where(eq(transactions.id, trx.id));
-
-		return { success: true, message: 'Stok Awal ULP telah ditolak. ULP dapat mengajukan ulang.' };
+		return { success: true, message: 'Persetujuan Stok Awal Berhasil! Material yang dicentang telah ditambahkan ke stok ULP.' };
 	}
 };
 

@@ -565,22 +565,28 @@
 
 							<!-- Photo Upload Section -->
 							<div class="bg-blue-50 border-2 border-dashed border-blue-200 p-6 rounded-2xl flex flex-col items-center">
-								<p class="text-[10px] font-black text-blue-800 uppercase mb-4 italic tracking-widest text-center">Lampirkan Foto Bukti Pemasangan (Opsional untuk Draf, Wajib untuk Konfirmasi)</p>
-								<div class="flex items-center gap-6">
+								<p class="text-[10px] font-black text-blue-800 uppercase mb-4 italic tracking-widest text-center">Lampirkan Foto Bukti Pemasangan (Bisa lebih dari 1 gambar. Opsional untuk Draf, Wajib untuk Konfirmasi)</p>
+								<div class="flex flex-col items-center gap-4 w-full">
 									<label class="cursor-pointer bg-white text-blue-700 px-6 py-3 rounded-xl font-black border-2 border-blue-300 shadow-md inline-flex items-center hover:bg-blue-100 transition-all text-xs">
-										<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+										<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
 										AMBIL FOTO LAPANGAN
-										<input type="file" accept="image/*" capture="environment" class="hidden" onchange={(e) => handleFileChange(e, 'PHOTO')} />
+										<input type="file" accept="image/*" multiple capture="environment" class="hidden" onchange={(e) => handleFileChange(e, 'PEMAKAIAN')} />
 									</label>
-									{#if fileBase64}
-										<div class="flex items-center text-green-600 font-black italic text-xs animate-bounce">
-											<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-											Foto Terlampir
+									
+									{#if pemakaianPhotos.length > 0}
+										<div class="flex flex-wrap gap-3 justify-center w-full mt-2">
+											{#each pemakaianPhotos as photo, i}
+												<div class="relative inline-block">
+													<img src={photo} alt="Preview" class="h-24 w-24 object-cover rounded-lg border-2 border-green-300 shadow-sm" />
+													<button type="button" onclick={() => pemakaianPhotos = pemakaianPhotos.filter((_, idx) => idx !== i)} class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] hover:bg-red-600 shadow-md">✕</button>
+													<input type="hidden" name="photoBase64[]" value={photo}>
+												</div>
+											{/each}
 										</div>
+										<div class="text-green-600 font-black italic text-xs animate-bounce mt-2">✓ {pemakaianPhotos.length} Foto Terlampir</div>
 									{:else}
-										<div class="text-gray-400 font-bold italic text-xs">Belum ada foto</div>
+										<div class="text-gray-400 font-bold italic text-xs mt-2">Belum ada foto</div>
 									{/if}
-									<input type="hidden" name="photoBase64" value={fileBase64}>
 								</div>
 							</div>
 
@@ -747,38 +753,39 @@
 														<span class="bg-yellow-400 text-[#0A417A] text-[8px] font-black px-2 py-1 rounded shadow-sm">BUTUH PERSETUJUAN</span>
 													</div>
 
-													<div class="space-y-1 bg-gray-50 p-4 rounded-xl border border-gray-100 mb-5 shadow-inner">
-														<p class="text-[9px] font-black text-gray-400 uppercase mb-3">Rincian Material yang Diajukan:</p>
-														{#each trx.items as item}
-															<div class="flex justify-between items-center text-xs font-bold text-gray-700 border-b border-gray-100 pb-1.5 mb-1.5 last:border-0 last:pb-0 last:mb-0">
-																<span class="uppercase">{item.name}</span>
-																<span class="text-[#0A417A] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{item.quantity} Unit</span>
-															</div>
-														{/each}
-													</div>
+													<form method="POST" action="?/prosesStokAwal" use:enhance={handleEnhance} class="space-y-4">
+														<input type="hidden" name="transactionId" value={trx.id} />
+														
+														<div class="space-y-1 bg-gray-50 p-4 rounded-xl border border-gray-100 mb-5 shadow-inner">
+															<p class="text-[9px] font-black text-gray-400 uppercase mb-3">Rincian Material yang Diajukan (Pilih yang diterima):</p>
+															{#each trx.items as item}
+																<label class="flex justify-between items-center text-xs font-bold text-gray-700 border-b border-gray-200 pb-2 mb-2 last:border-0 last:pb-0 last:mb-0 cursor-pointer hover:bg-gray-200 px-2 py-1.5 rounded transition-colors bg-white shadow-sm">
+																	<div class="flex items-center gap-3">
+																		<input type="checkbox" name="acceptedMaterials[]" value={item.materialId} class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" checked />
+																		<span class="uppercase">{item.name}</span>
+																	</div>
+																	<span class="text-[#0A417A] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{item.quantity} Unit</span>
+																</label>
+															{/each}
+														</div>
 
-													<div class="flex gap-3 mt-4">
-														<form method="POST" action="?/tolakStokAwal" use:enhance={handleEnhance} class="flex-1">
-															<input type="hidden" name="transactionId" value={trx.id} />
-															<button class="w-full text-[11px] bg-red-500 text-white font-black py-2.5 rounded-xl shadow-sm hover:bg-red-600 transition-all disabled:opacity-50" disabled={isSubmitting}>
+														<div class="flex gap-3">
+															<button type="submit" name="actionType" value="REJECT" class="flex-1 text-[11px] bg-red-500 text-white font-black py-2.5 rounded-xl shadow-sm hover:bg-red-600 transition-all disabled:opacity-50" disabled={isSubmitting}>
 																{#if isSubmitting}
 																	MEMPROSES...
 																{:else}
-																	TOLAK DATA
+																	TOLAK SEMUA
 																{/if}
 															</button>
-														</form>
-														<form method="POST" action="?/konfirmasiStokAwal" use:enhance={handleEnhance} class="flex-1">
-															<input type="hidden" name="transactionId" value={trx.id} />
-															<button class="w-full text-[11px] bg-green-500 text-white font-black py-2.5 rounded-xl shadow-sm hover:bg-green-600 transition-all disabled:opacity-50" disabled={isSubmitting}>
+															<button type="submit" name="actionType" value="ACCEPT" class="flex-1 text-[11px] bg-green-500 text-white font-black py-2.5 rounded-xl shadow-sm hover:bg-green-600 transition-all disabled:opacity-50" disabled={isSubmitting}>
 																{#if isSubmitting}
 																	MEMPROSES...
 																{:else}
-																	TERIMA STOK
+																	TERIMA PILIHAN
 																{/if}
 															</button>
-														</form>
-													</div>
+														</div>
+													</form>
 												</div>
 											{/each}
 										</div>
