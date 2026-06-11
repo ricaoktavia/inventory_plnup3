@@ -245,6 +245,11 @@
 				<div class="flex border-b border-gray-200 mb-6 bg-gray-50 p-1 rounded-t-lg">
 					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'TRANSFER' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { up3ActiveTab = 'TRANSFER'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; selectedRequestId = ''; }}>
 						TRANSFER MATERIAL
+						{#if (data.requestedTransactions || []).filter(t => t.type !== 'INITIAL_STOCK').length > 0}
+							<span class="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full ml-1">
+								{(data.requestedTransactions || []).filter(t => t.type !== 'INITIAL_STOCK').length}
+							</span>
+						{/if}
 					</button>
 					<button class="flex-1 px-2 py-2 text-[10px] font-black tracking-widest {up3ActiveTab === 'PEMAKAIAN' ? 'bg-white text-[#0A417A] shadow-sm rounded-md' : 'text-gray-400 hover:text-gray-600'}" onclick={() => { up3ActiveTab = 'PEMAKAIAN'; materialRows = [{ materialId: '', jumlah: '', keterangan: '', searchQuery: '', showDropdown: false }]; }}>
 						PEMAKAIAN LAPANGAN
