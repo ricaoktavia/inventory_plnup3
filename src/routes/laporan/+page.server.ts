@@ -54,12 +54,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	if (selectedUlpId === 'up3') {
 		// UP3 Logic
+		// INITIAL_STOCK & INCOMING hanya dari transaksi UP3 (targetUlpId IS NULL)
+		// DISTRIBUTION (keluar ke ULP) & USAGE UP3 juga dihitung sebagai outgoing
 		periodRows = await db
 			.select({
 				materialId: transactionDetails.materialId,
-				initial: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INITIAL_STOCK' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} IN ('DISTRIBUTION', 'USAGE') THEN ${transactionDetails.quantity} ELSE 0 END)`
+				initial: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INITIAL_STOCK' AND ${transactions.targetUlpId} IS NULL THEN ${transactionDetails.quantity} ELSE 0 END)`,
+				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' AND ${transactions.targetUlpId} IS NULL THEN ${transactionDetails.quantity} ELSE 0 END)`,
+				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' OR (${transactions.type} = 'USAGE' AND ${transactions.targetUlpId} IS NULL) THEN ${transactionDetails.quantity} ELSE 0 END)`
 			})
 			.from(transactions)
 			.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
@@ -68,7 +70,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 					gte(transactions.createdAt, start),
 					lte(transactions.createdAt, end),
 					eq(transactions.status, 'COMPLETED'),
-					or(isNull(transactions.targetUlpId), eq(transactions.type, 'DISTRIBUTION'))
+					or(
+						isNull(transactions.targetUlpId),
+						eq(transactions.type, 'DISTRIBUTION')
+					)
 				)
 			)
 			.groupBy(transactionDetails.materialId);
@@ -76,9 +81,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		pastRows = await db
 			.select({
 				materialId: transactionDetails.materialId,
-				initial: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INITIAL_STOCK' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} IN ('DISTRIBUTION', 'USAGE') THEN ${transactionDetails.quantity} ELSE 0 END)`
+				initial: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INITIAL_STOCK' AND ${transactions.targetUlpId} IS NULL THEN ${transactionDetails.quantity} ELSE 0 END)`,
+				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INCOMING' AND ${transactions.targetUlpId} IS NULL THEN ${transactionDetails.quantity} ELSE 0 END)`,
+				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' OR (${transactions.type} = 'USAGE' AND ${transactions.targetUlpId} IS NULL) THEN ${transactionDetails.quantity} ELSE 0 END)`
 			})
 			.from(transactions)
 			.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
@@ -86,7 +91,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				and(
 					lt(transactions.createdAt, start),
 					eq(transactions.status, 'COMPLETED'),
-					or(isNull(transactions.targetUlpId), eq(transactions.type, 'DISTRIBUTION'))
+					or(
+						isNull(transactions.targetUlpId),
+						eq(transactions.type, 'DISTRIBUTION')
+					)
 				)
 			)
 			.groupBy(transactionDetails.materialId);
@@ -94,12 +102,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		// ULP Logic
 		const ulpId = parseInt(selectedUlpId as string);
 
+		// PENTING: INITIAL_STOCK ULP bisa berstatus REQUESTED (belum diapprove UP3) atau COMPLETED (sudah diapprove).
+		// Keduanya harus ditangkap agar stok awal ULP muncul di laporan.
 		periodRows = await db
 			.select({
 				materialId: transactionDetails.materialId,
 				initial: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INITIAL_STOCK' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' THEN ${transactionDetails.quantity} ELSE 0 END)`
+				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' AND ${transactions.status} = 'COMPLETED' THEN ${transactionDetails.quantity} ELSE 0 END)`,
+				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' AND ${transactions.status} = 'COMPLETED' THEN ${transactionDetails.quantity} ELSE 0 END)`
 			})
 			.from(transactions)
 			.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
@@ -107,8 +117,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				and(
 					gte(transactions.createdAt, start),
 					lte(transactions.createdAt, end),
-					eq(transactions.status, 'COMPLETED'),
-					eq(transactions.targetUlpId, ulpId)
+					eq(transactions.targetUlpId, ulpId),
+					or(
+						// Tangkap semua status untuk INITIAL_STOCK (REQUESTED belum diapprove, COMPLETED sudah)
+						eq(transactions.type, 'INITIAL_STOCK'),
+						// Selain INITIAL_STOCK, hanya yang COMPLETED
+						eq(transactions.status, 'COMPLETED')
+					)
 				)
 			)
 			.groupBy(transactionDetails.materialId);
@@ -117,16 +132,21 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.select({
 				materialId: transactionDetails.materialId,
 				initial: sql<number>`SUM(CASE WHEN ${transactions.type} = 'INITIAL_STOCK' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' THEN ${transactionDetails.quantity} ELSE 0 END)`,
-				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' THEN ${transactionDetails.quantity} ELSE 0 END)`
+				incoming: sql<number>`SUM(CASE WHEN ${transactions.type} = 'DISTRIBUTION' AND ${transactions.status} = 'COMPLETED' THEN ${transactionDetails.quantity} ELSE 0 END)`,
+				outgoing: sql<number>`SUM(CASE WHEN ${transactions.type} = 'USAGE' AND ${transactions.status} = 'COMPLETED' THEN ${transactionDetails.quantity} ELSE 0 END)`
 			})
 			.from(transactions)
 			.innerJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
 			.where(
 				and(
 					lt(transactions.createdAt, start),
-					eq(transactions.status, 'COMPLETED'),
-					eq(transactions.targetUlpId, ulpId)
+					eq(transactions.targetUlpId, ulpId),
+					or(
+						// Tangkap semua status untuk INITIAL_STOCK
+						eq(transactions.type, 'INITIAL_STOCK'),
+						// Selain INITIAL_STOCK, hanya yang COMPLETED
+						eq(transactions.status, 'COMPLETED')
+					)
 				)
 			)
 			.groupBy(transactionDetails.materialId);
@@ -154,11 +174,32 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		const past = pastMap.get(mat.id) || { initial: 0, incoming: 0, outgoing: 0 };
 		const period = periodMap.get(mat.id) || { initial: 0, incoming: 0, outgoing: 0 };
 
-		// Saldo fisik sebelum tanggal mulai (Start Date) dari historis transaksi
-		const pastBalance = past.initial + past.incoming - past.outgoing;
+		// Hitung saldo historis sebelum periode:
+		// INITIAL_STOCK adalah posisi stok absolut (set ulang), bukan akumulatif.
+		// Jika ada INITIAL_STOCK di masa lampau, gunakan stok awal terakhir + transaksi setelahnya.
+		// Jika tidak ada INITIAL_STOCK, saldo = incoming - outgoing.
+		let pastBalance: number;
+		if (past.initial > 0) {
+			// Ada input stok awal di masa lampau: saldo = stok_awal + masuk_setelahnya - keluar_setelahnya
+			pastBalance = past.initial + past.incoming - past.outgoing;
+		} else {
+			// Tidak ada input stok awal di masa lampau: saldo hanya dari transaksi
+			pastBalance = past.incoming - past.outgoing;
+		}
 
-		// Stok Awal di Laporan adalah Saldo historis ditambah Stok Awal yang terinput pada periode tersebut
-		const awal = pastBalance + period.initial;
+		// Stok Awal Laporan:
+		// Jika ada INITIAL_STOCK di dalam periode (misalnya input stok awal di bulan ini),
+		// maka INITIAL_STOCK itu MENGGANTIKAN saldo sebelumnya, bukan ditambahkan.
+		// Karena INITIAL_STOCK = set ulang posisi stok fisik.
+		let awal: number;
+		if (period.initial > 0) {
+			// Input stok awal dalam periode ini: gunakan sebagai stok awal (reset)
+			awal = period.initial;
+		} else {
+			// Tidak ada input stok awal dalam periode: gunakan saldo dari historis
+			awal = pastBalance;
+		}
+
 		const masuk = period.incoming;
 		const keluar = period.outgoing;
 		const akhir = awal + masuk - keluar;

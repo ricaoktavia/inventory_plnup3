@@ -78,7 +78,9 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const allUlps = user.role === 'ADMIN_UP3' ? await db.select().from(ulps) : [];
 
 	return {
-		usageHistory: Array.from(historyMap.values()).filter((t) => t.items && t.items.length > 0),
+		usageHistory: Array.from(historyMap.values())
+			.filter((t) => t.items && t.items.length > 0)
+			.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
 		ulps: allUlps,
 		userRole: user.role,
 		userUlpId: user.ulpId
