@@ -153,7 +153,7 @@
 				// Dynamic column widths calculation (prevent overlapping/text clipping)
 				const colWidths = excelRows[0].map((_, colIndex) => {
 					let maxLen = 10; // minimum fallback width
-					excelRows.forEach(row => {
+					excelRows.forEach((row) => {
 						const val = row[colIndex];
 						const len = val ? String(val).length : 0;
 						if (len > maxLen) {
@@ -211,7 +211,7 @@
 									sz: 10
 								},
 								alignment: {
-									horizontal: (c === 7 || c === 8 || c === 11) ? 'left' : 'center',
+									horizontal: c === 7 || c === 8 || c === 11 ? 'left' : 'center',
 									vertical: 'center'
 								},
 								border: {
@@ -245,32 +245,42 @@
 	<title>Export Data - PLN Gudang UP3 Madura</title>
 </svelte:head>
 
-<div class="mb-8 flex justify-between items-end max-w-[1000px] mx-auto">
+<div class="mx-auto mb-8 flex max-w-[1000px] items-end justify-between">
 	<div>
-		<h1 class="text-3xl font-bold text-[#0A417A]">
-			Export Data Transaksi
-		</h1>
-		<p class="text-gray-500 mt-2">Unduh seluruh berkas riwayat mutasi ke format Microsoft Excel (.xlsx)</p>
+		<h1 class="text-3xl font-bold text-[#0A417A]">Export Data Transaksi</h1>
+		<p class="mt-2 text-gray-500">
+			Unduh seluruh berkas riwayat mutasi ke format Microsoft Excel (.xlsx)
+		</p>
 	</div>
 </div>
 
-<div class="max-w-[600px] mx-auto">
-	
+<div class="mx-auto max-w-[600px]">
 	<!-- FORM FILTERS -->
-	<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-		<h2 class="text-base font-bold text-[#0A417A] uppercase tracking-wider border-b border-gray-100 pb-3 flex items-center gap-2">
-			<svg class="w-5 h-5 text-[#0092D1]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+	<div class="space-y-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+		<h2
+			class="flex items-center gap-2 border-b border-gray-100 pb-3 text-base font-bold tracking-wider text-[#0A417A] uppercase"
+		>
+			<svg class="h-5 w-5 text-[#0092D1]" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+				><path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+				></path></svg
+			>
 			Konfigurasi Ekspor
 		</h2>
 
 		<div class="space-y-4">
 			<!-- Transaksi Type Selection -->
 			<div>
-				<label for="type" class="block text-xs font-bold text-gray-500 uppercase mb-2">Tipe Riwayat Transaksi</label>
-				<select 
+				<label for="type" class="mb-2 block text-xs font-bold text-gray-500 uppercase"
+					>Tipe Riwayat Transaksi</label
+				>
+				<select
 					id="type"
 					bind:value={selectedType}
-					class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#0092D1] outline-none bg-white cursor-pointer hover:border-gray-400 transition-all font-semibold text-gray-800"
+					class="w-full cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-800 transition-all outline-none hover:border-gray-400 focus:ring-2 focus:ring-[#0092D1]"
 				>
 					<option value="ALL">Semua Riwayat Transaksi</option>
 					<option value="TRANSFER">Transfer Material (Mutasi UP3 &rarr; ULP)</option>
@@ -286,23 +296,27 @@
 			</div>
 
 			<!-- Date Range Picker -->
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 				<div>
-					<label for="startDate" class="block text-xs font-bold text-gray-500 uppercase mb-2">Mulai Tanggal</label>
-					<input 
+					<label for="startDate" class="mb-2 block text-xs font-bold text-gray-500 uppercase"
+						>Mulai Tanggal</label
+					>
+					<input
 						id="startDate"
-						type="date" 
-						bind:value={startDate} 
-						class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#0092D1] outline-none hover:border-gray-400 transition-all font-semibold text-gray-800 shadow-sm"
+						type="date"
+						bind:value={startDate}
+						class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-800 shadow-sm transition-all outline-none hover:border-gray-400 focus:ring-2 focus:ring-[#0092D1]"
 					/>
 				</div>
 				<div>
-					<label for="endDate" class="block text-xs font-bold text-gray-500 uppercase mb-2">Sampai Tanggal</label>
-					<input 
+					<label for="endDate" class="mb-2 block text-xs font-bold text-gray-500 uppercase"
+						>Sampai Tanggal</label
+					>
+					<input
 						id="endDate"
-						type="date" 
-						bind:value={endDate} 
-						class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#0092D1] outline-none hover:border-gray-400 transition-all font-semibold text-gray-800 shadow-sm"
+						type="date"
+						bind:value={endDate}
+						class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-800 shadow-sm transition-all outline-none hover:border-gray-400 focus:ring-2 focus:ring-[#0092D1]"
 					/>
 				</div>
 			</div>
@@ -310,14 +324,20 @@
 
 		<!-- Action Export Button -->
 		<div class="pt-4">
-			<button 
+			<button
 				onclick={handleExport}
-				class="w-full bg-gradient-to-r from-[#0188CE] to-[#0D5BB4] hover:from-[#0092D1] hover:to-[#0A417A] text-white font-black text-sm py-4 px-6 rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 transform active:scale-95 cursor-pointer"
+				class="flex w-full transform cursor-pointer items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#0188CE] to-[#0D5BB4] px-6 py-4 text-sm font-black text-white shadow-lg transition-all hover:from-[#0092D1] hover:to-[#0A417A] active:scale-95"
 			>
-				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+				<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+					><path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+					></path></svg
+				>
 				UNDUH DATA EXCEL
 			</button>
 		</div>
 	</div>
-
 </div>

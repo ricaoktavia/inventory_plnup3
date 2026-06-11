@@ -1,190 +1,190 @@
 {
-  "period": {
-    "start": "2026-04-30",
-    "end": "2026-05-25"
-  },
-  "totalRows": 34,
-  "zeroAwalCount": 0,
-  "sample": [
-    {
-      "id": 224,
-      "name": "CABLE PWR ACC;CABLE SHOE AL-CU 1H 150mm2",
-      "unit": "PCS",
-      "awal": 1873,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 1873
-    },
-    {
-      "id": 221,
-      "name": "CABLE PWR ACC;CABLE SHOE AL-CU 1H 50mm2",
-      "unit": "PCS",
-      "awal": 204,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 204
-    },
-    {
-      "id": 222,
-      "name": "CABLE PWR ACC;CABLE SHOE AL-CU 1H 70mm2",
-      "unit": "PCS",
-      "awal": 1065,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 1065
-    },
-    {
-      "id": 229,
-      "name": "CABLE PWR ACC;CABLE SHOE AL-CU 2H 150mm2",
-      "unit": "PCS",
-      "awal": 57,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 57
-    },
-    {
-      "id": 228,
-      "name": "CABLE PWR ACC;CABLE SHOE AL-CU 2H 70mm2",
-      "unit": "PCS",
-      "awal": 2,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 2
-    },
-    {
-      "id": 244,
-      "name": "CABLE PWR ACC;CABLE SHOE CU ID 1H 150mm2",
-      "unit": "PCS",
-      "awal": 502,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 502
-    },
-    {
-      "id": 240,
-      "name": "CABLE PWR ACC;CABLE SHOE CU ID 1H 50mm2",
-      "unit": "PCS",
-      "awal": 1220,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 1220
-    },
-    {
-      "id": 241,
-      "name": "CABLE PWR ACC;CABLE SHOE CU ID 1H 70mm2",
-      "unit": "PCS",
-      "awal": 614,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 614
-    },
-    {
-      "id": 248,
-      "name": "CABLE PWR ACC;CABLE SHOE CU OD 1H 150mm2",
-      "unit": "PCS",
-      "awal": 37,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 37
-    },
-    {
-      "id": 150,
-      "name": "CLAMP;G;AL;10-16/10-16mm2;PRS",
-      "unit": "PCS",
-      "awal": 96,
-      "masuk": 0,
-      "keluar": 1,
-      "akhir": 95
-    },
-    {
-      "id": 152,
-      "name": "CLAMP;G;AL;50-70/10-16mm2;PRS",
-      "unit": "PCS",
-      "awal": 2553,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 2553
-    },
-    {
-      "id": 153,
-      "name": "CLAMP;G;AL;50-70/16-35mm2;PRS",
-      "unit": "PCS",
-      "awal": 180,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 180
-    },
-    {
-      "id": 154,
-      "name": "CLAMP;G;AL;50-70/50-70mm2;PRS",
-      "unit": "PCS",
-      "awal": 914,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 914
-    },
-    {
-      "id": 155,
-      "name": "CLAMP;G;AL;70-150/70-150mm2;PRS",
-      "unit": "PCS",
-      "awal": 625,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 625
-    },
-    {
-      "id": 190,
-      "name": "COND ACC;JOINT AL 150mm2 COMP",
-      "unit": "PCS",
-      "awal": 143,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 143
-    },
-    {
-      "id": 188,
-      "name": "COND ACC;JOINT AL 95mm2 COMP",
-      "unit": "PCS",
-      "awal": 18,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 18
-    },
-    {
-      "id": 195,
-      "name": "COND ACC;JOINT ALCU 16mm2",
-      "unit": "PCS",
-      "awal": 100,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 100
-    },
-    {
-      "id": 184,
-      "name": "COND ACC;JOINT SLEEVE AL 150mm2",
-      "unit": "PCS",
-      "awal": 389,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 389
-    },
-    {
-      "id": 180,
-      "name": "COND ACC;JOINT SLEEVE AL 50mm2 INSUL",
-      "unit": "PCS",
-      "awal": 330,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 330
-    },
-    {
-      "id": 183,
-      "name": "COND ACC;JOINT SLEEVE AL 70mm2",
-      "unit": "PCS",
-      "awal": 557,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 557
-    }
-  ]
+	"period": {
+		"start": "2026-04-30",
+		"end": "2026-05-25"
+	},
+	"totalRows": 34,
+	"zeroAwalCount": 0,
+	"sample": [
+		{
+			"id": 224,
+			"name": "CABLE PWR ACC;CABLE SHOE AL-CU 1H 150mm2",
+			"unit": "PCS",
+			"awal": 1873,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 1873
+		},
+		{
+			"id": 221,
+			"name": "CABLE PWR ACC;CABLE SHOE AL-CU 1H 50mm2",
+			"unit": "PCS",
+			"awal": 204,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 204
+		},
+		{
+			"id": 222,
+			"name": "CABLE PWR ACC;CABLE SHOE AL-CU 1H 70mm2",
+			"unit": "PCS",
+			"awal": 1065,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 1065
+		},
+		{
+			"id": 229,
+			"name": "CABLE PWR ACC;CABLE SHOE AL-CU 2H 150mm2",
+			"unit": "PCS",
+			"awal": 57,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 57
+		},
+		{
+			"id": 228,
+			"name": "CABLE PWR ACC;CABLE SHOE AL-CU 2H 70mm2",
+			"unit": "PCS",
+			"awal": 2,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 2
+		},
+		{
+			"id": 244,
+			"name": "CABLE PWR ACC;CABLE SHOE CU ID 1H 150mm2",
+			"unit": "PCS",
+			"awal": 502,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 502
+		},
+		{
+			"id": 240,
+			"name": "CABLE PWR ACC;CABLE SHOE CU ID 1H 50mm2",
+			"unit": "PCS",
+			"awal": 1220,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 1220
+		},
+		{
+			"id": 241,
+			"name": "CABLE PWR ACC;CABLE SHOE CU ID 1H 70mm2",
+			"unit": "PCS",
+			"awal": 614,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 614
+		},
+		{
+			"id": 248,
+			"name": "CABLE PWR ACC;CABLE SHOE CU OD 1H 150mm2",
+			"unit": "PCS",
+			"awal": 37,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 37
+		},
+		{
+			"id": 150,
+			"name": "CLAMP;G;AL;10-16/10-16mm2;PRS",
+			"unit": "PCS",
+			"awal": 96,
+			"masuk": 0,
+			"keluar": 1,
+			"akhir": 95
+		},
+		{
+			"id": 152,
+			"name": "CLAMP;G;AL;50-70/10-16mm2;PRS",
+			"unit": "PCS",
+			"awal": 2553,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 2553
+		},
+		{
+			"id": 153,
+			"name": "CLAMP;G;AL;50-70/16-35mm2;PRS",
+			"unit": "PCS",
+			"awal": 180,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 180
+		},
+		{
+			"id": 154,
+			"name": "CLAMP;G;AL;50-70/50-70mm2;PRS",
+			"unit": "PCS",
+			"awal": 914,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 914
+		},
+		{
+			"id": 155,
+			"name": "CLAMP;G;AL;70-150/70-150mm2;PRS",
+			"unit": "PCS",
+			"awal": 625,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 625
+		},
+		{
+			"id": 190,
+			"name": "COND ACC;JOINT AL 150mm2 COMP",
+			"unit": "PCS",
+			"awal": 143,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 143
+		},
+		{
+			"id": 188,
+			"name": "COND ACC;JOINT AL 95mm2 COMP",
+			"unit": "PCS",
+			"awal": 18,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 18
+		},
+		{
+			"id": 195,
+			"name": "COND ACC;JOINT ALCU 16mm2",
+			"unit": "PCS",
+			"awal": 100,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 100
+		},
+		{
+			"id": 184,
+			"name": "COND ACC;JOINT SLEEVE AL 150mm2",
+			"unit": "PCS",
+			"awal": 389,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 389
+		},
+		{
+			"id": 180,
+			"name": "COND ACC;JOINT SLEEVE AL 50mm2 INSUL",
+			"unit": "PCS",
+			"awal": 330,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 330
+		},
+		{
+			"id": 183,
+			"name": "COND ACC;JOINT SLEEVE AL 70mm2",
+			"unit": "PCS",
+			"awal": 557,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 557
+		}
+	]
 }

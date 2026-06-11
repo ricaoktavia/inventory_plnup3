@@ -6,32 +6,33 @@ import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	const { user } = await parent();
-	
+
 	if (!user || (user.role !== 'ADMIN_UP3' && user.role !== 'ADMIN_ULP')) {
 		throw error(403, 'Akses ditolak.');
 	}
 
 	// Fetch all transactions (DISTRIBUTION, USAGE, INITIAL_STOCK)
-	let query = db.select({
-		id: transactions.id,
-		referenceNumber: transactions.referenceNumber,
-		date: transactions.createdAt,
-		targetUlpId: transactions.targetUlpId,
-		targetUlp: ulps.name,
-		status: transactions.status,
-		type: transactions.type,
-		takerName: transactions.takerName,
-		usagePurpose: transactions.usagePurpose,
-		firstParty: transactions.firstParty,
-		materialName: materials.name,
-		quantity: transactionDetails.quantity,
-		description: transactionDetails.description,
-		unit: materials.unit
-	})
-	.from(transactions)
-	.leftJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
-	.leftJoin(ulps, eq(transactions.targetUlpId, ulps.id))
-	.leftJoin(materials, eq(transactionDetails.materialId, materials.id));
+	let query = db
+		.select({
+			id: transactions.id,
+			referenceNumber: transactions.referenceNumber,
+			date: transactions.createdAt,
+			targetUlpId: transactions.targetUlpId,
+			targetUlp: ulps.name,
+			status: transactions.status,
+			type: transactions.type,
+			takerName: transactions.takerName,
+			usagePurpose: transactions.usagePurpose,
+			firstParty: transactions.firstParty,
+			materialName: materials.name,
+			quantity: transactionDetails.quantity,
+			description: transactionDetails.description,
+			unit: materials.unit
+		})
+		.from(transactions)
+		.leftJoin(transactionDetails, eq(transactions.id, transactionDetails.transactionId))
+		.leftJoin(ulps, eq(transactions.targetUlpId, ulps.id))
+		.leftJoin(materials, eq(transactionDetails.materialId, materials.id));
 
 	// Filter by ULP if role is ADMIN_ULP
 	if (user.role === 'ADMIN_ULP') {
@@ -43,7 +44,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	// Group rows by transaction
 	const historyMap = new Map();
-	historyRows.forEach(row => {
+	historyRows.forEach((row) => {
 		if (!historyMap.has(row.id)) {
 			historyMap.set(row.id, {
 				id: row.id,

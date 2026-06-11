@@ -1,4 +1,13 @@
-import { mysqlTable, int, varchar, text, mysqlEnum, datetime, timestamp, boolean } from 'drizzle-orm/mysql-core';
+import {
+	mysqlTable,
+	int,
+	varchar,
+	text,
+	mysqlEnum,
+	datetime,
+	timestamp,
+	boolean
+} from 'drizzle-orm/mysql-core';
 
 // --- ULPs Table ---
 export const ulps = mysqlTable('ulps', {
@@ -26,7 +35,9 @@ export const materials = mysqlTable('materials', {
 // --- Stocks Table ---
 export const stocks = mysqlTable('stocks', {
 	id: int('id').primaryKey().autoincrement(),
-	materialId: int('material_id').notNull().references(() => materials.id),
+	materialId: int('material_id')
+		.notNull()
+		.references(() => materials.id),
 	ulpId: int('ulp_id').references(() => ulps.id), // Null means UP3 central stock
 	quantity: int('quantity').notNull().default(0)
 });
@@ -36,26 +47,34 @@ export const transactions = mysqlTable('transactions', {
 	id: int('id').primaryKey().autoincrement(),
 	referenceNumber: varchar('reference_number', { length: 100 }).notNull().unique(),
 	type: mysqlEnum('type', ['DISTRIBUTION', 'USAGE', 'INCOMING', 'INITIAL_STOCK']).notNull(),
-	status: mysqlEnum('status', ['REQUESTED', 'DRAFT', 'APPROVED_ULP', 'COMPLETED', 'REJECTED']).notNull().default('DRAFT'),
-	createdBy: int('created_by').notNull().references(() => users.id),
+	status: mysqlEnum('status', ['REQUESTED', 'DRAFT', 'APPROVED_ULP', 'COMPLETED', 'REJECTED'])
+		.notNull()
+		.default('DRAFT'),
+	createdBy: int('created_by')
+		.notNull()
+		.references(() => users.id),
 	targetUlpId: int('target_ulp_id').references(() => ulps.id),
 	createdAt: timestamp('created_at').notNull().defaultNow(),
 	approvedAt: datetime('approved_at'),
 	takerName: varchar('taker_name', { length: 255 }),
 	usagePurpose: varchar('usage_purpose', { length: 255 }),
 	firstParty: varchar('first_party', { length: 50 }),
-	
-	// Storing image and QR directly via Base64 in LONGTEXT 
+
+	// Storing image and QR directly via Base64 in LONGTEXT
 	requestLetterBase64: text('request_letter_base64'),
-	photoBase64: text('photo_base64'), 
+	photoBase64: text('photo_base64'),
 	qrCodeBase64: text('qr_code_base64')
 });
 
 // --- Transaction Details Table ---
 export const transactionDetails = mysqlTable('transaction_details', {
 	id: int('id').primaryKey().autoincrement(),
-	transactionId: int('transaction_id').notNull().references(() => transactions.id),
-	materialId: int('material_id').notNull().references(() => materials.id),
+	transactionId: int('transaction_id')
+		.notNull()
+		.references(() => transactions.id),
+	materialId: int('material_id')
+		.notNull()
+		.references(() => materials.id),
 	quantity: int('quantity').notNull(),
 	description: text('description')
 });
@@ -63,7 +82,9 @@ export const transactionDetails = mysqlTable('transaction_details', {
 // --- Notifications Table ---
 export const notifications = mysqlTable('notifications', {
 	id: int('id').primaryKey().autoincrement(),
-	senderId: int('sender_id').notNull().references(() => users.id),
+	senderId: int('sender_id')
+		.notNull()
+		.references(() => users.id),
 	recipientRole: mysqlEnum('recipient_role', ['ADMIN_UP3', 'ADMIN_ULP']),
 	recipientUlpId: int('recipient_ulp_id').references(() => ulps.id),
 	message: text('message').notNull(),

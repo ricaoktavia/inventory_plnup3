@@ -1,7 +1,7 @@
 <script lang="ts">
 	import XLSX from 'xlsx-js-style';
 	import { loadingState } from '$lib/loadingState.svelte';
-	
+
 	let { data } = $props();
 	let activeTab = $state(data.activeTab || 'MUTASI'); // MUTASI | PEMAKAIAN
 
@@ -54,7 +54,7 @@
 					// Dynamic column widths calculation (prevent overlapping/text clipping)
 					const colWidths = excelRows[0].map((_, colIndex) => {
 						let maxLen = 10; // minimum fallback width
-						excelRows.forEach(row => {
+						excelRows.forEach((row) => {
 							const val = row[colIndex];
 							const len = val ? String(val).length : 0;
 							if (len > maxLen) {
@@ -155,14 +155,7 @@
 					]);
 
 					data.monthlyUsageData.forEach((item, i) => {
-						excelRows.push([
-							i + 1,
-							item.name,
-							item.unit,
-							...item.months,
-							item.total,
-							item.avg
-						]);
+						excelRows.push([i + 1, item.name, item.unit, ...item.months, item.total, item.avg]);
 					});
 
 					// Create workbook & worksheet
@@ -172,7 +165,7 @@
 					// Dynamic column widths calculation (prevent overlapping/text clipping)
 					const colWidths = excelRows[0].map((_, colIndex) => {
 						let maxLen = 6; // lower min fallback for month columns
-						excelRows.forEach(row => {
+						excelRows.forEach((row) => {
 							const val = row[colIndex];
 							const len = val ? String(val).length : 0;
 							if (len > maxLen) {
@@ -260,56 +253,69 @@
 	<title>Laporan Mutasi - PLN Gudang</title>
 </svelte:head>
 
-<div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+<div class="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
 	<div>
 		<h1 class="text-3xl font-bold text-[#0A417A]">Laporan Mutasi</h1>
-		<p class="text-gray-500 mt-2">Rekapitulasi mutasi material (Awal, Masuk, Keluar, Akhir)</p>
+		<p class="mt-2 text-gray-500">Rekapitulasi mutasi material (Awal, Masuk, Keluar, Akhir)</p>
 	</div>
 
 	<div class="flex items-center gap-3">
-		<button 
+		<button
 			onclick={handleDownload}
-			class="bg-gradient-to-r from-[#107C41] to-[#1B5E20] hover:from-[#1B5E20] hover:to-[#0D522C] text-white text-sm font-bold py-[9px] px-5 rounded-lg flex items-center shadow-md transition-all h-full cursor-pointer"
+			class="flex h-full cursor-pointer items-center rounded-lg bg-gradient-to-r from-[#107C41] to-[#1B5E20] px-5 py-[9px] text-sm font-bold text-white shadow-md transition-all hover:from-[#1B5E20] hover:to-[#0D522C]"
 		>
-			<svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+			<svg class="mr-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+				><path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+				></path></svg
+			>
 			Download Excel
 		</button>
 	</div>
 </div>
 
 <!-- Filters Panel -->
-<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
-	<form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end text-sm">
+<div class="mb-8 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+	<form method="GET" class="grid grid-cols-1 items-end gap-4 text-sm md:grid-cols-3">
 		<input type="hidden" name="tab" value={activeTab} />
-		
+
 		{#if activeTab === 'MUTASI'}
 			<div>
-				<label for="startDate" class="block text-xs font-bold text-gray-500 uppercase mb-1">Mulai Tanggal</label>
-				<input 
-					type="date" 
-					name="startDate" 
-					value={data.startDate} 
+				<label for="startDate" class="mb-1 block text-xs font-bold text-gray-500 uppercase"
+					>Mulai Tanggal</label
+				>
+				<input
+					type="date"
+					name="startDate"
+					value={data.startDate}
 					onchange={(e) => e.currentTarget.form?.submit()}
-					class="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-500 shadow-sm" 
+					class="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm outline-none focus:ring-1 focus:ring-cyan-500"
 				/>
 			</div>
 			<div>
-				<label for="endDate" class="block text-xs font-bold text-gray-500 uppercase mb-1">Sampai Tanggal</label>
-				<input 
-					type="date" 
-					name="endDate" 
-					value={data.endDate} 
+				<label for="endDate" class="mb-1 block text-xs font-bold text-gray-500 uppercase"
+					>Sampai Tanggal</label
+				>
+				<input
+					type="date"
+					name="endDate"
+					value={data.endDate}
 					onchange={(e) => e.currentTarget.form?.submit()}
-					class="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-500 shadow-sm" 
+					class="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm outline-none focus:ring-1 focus:ring-cyan-500"
 				/>
 			</div>
 		{:else}
 			<div>
-				<label for="year" class="block text-xs font-bold text-gray-500 uppercase mb-1">Pilih Tahun</label>
-				<select 
-					name="year" 
+				<label for="year" class="mb-1 block text-xs font-bold text-gray-500 uppercase"
+					>Pilih Tahun</label
+				>
+				<select
+					name="year"
 					onchange={(e) => e.currentTarget.form?.submit()}
-					class="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-500 bg-white cursor-pointer hover:border-gray-400 transition-all font-semibold"
+					class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 font-semibold transition-all outline-none hover:border-gray-400 focus:ring-1 focus:ring-cyan-500"
 				>
 					{#each data.yearsList as y}
 						<option value={y} selected={data.currentYear === y}>{y}</option>
@@ -320,15 +326,19 @@
 
 		{#if data.userRole === 'ADMIN_UP3'}
 			<div>
-				<label for="ulpId" class="block text-xs font-bold text-gray-500 uppercase mb-1">Pilih Unit</label>
-				<select 
-					name="ulpId" 
+				<label for="ulpId" class="mb-1 block text-xs font-bold text-gray-500 uppercase"
+					>Pilih Unit</label
+				>
+				<select
+					name="ulpId"
 					onchange={(e) => e.currentTarget.form?.submit()}
-					class="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-500 bg-white cursor-pointer hover:border-gray-400 transition-all font-semibold"
+					class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 font-semibold transition-all outline-none hover:border-gray-400 focus:ring-1 focus:ring-cyan-500"
 				>
 					<option value="up3" selected={data.selectedUlpId === 'up3'}>Gudang Pusat UP3</option>
 					{#each data.allUlps as ulp}
-						<option value={ulp.id} selected={data.selectedUlpId === ulp.id.toString()}>Gudang ULP {ulp.name}</option>
+						<option value={ulp.id} selected={data.selectedUlpId === ulp.id.toString()}
+							>Gudang ULP {ulp.name}</option
+						>
 					{/each}
 				</select>
 			</div>
@@ -337,18 +347,22 @@
 </div>
 
 <!-- Tabs Header -->
-<div class="flex border-b border-gray-200 mb-6 gap-2">
-	<button 
+<div class="mb-6 flex gap-2 border-b border-gray-200">
+	<button
 		type="button"
-		onclick={() => switchTab('MUTASI')} 
-		class="px-5 py-2.5 font-bold text-sm transition-all border-b-2 {activeTab === 'MUTASI' ? 'border-[#0A417A] text-[#0A417A]' : 'border-transparent text-gray-500 hover:text-gray-700'} cursor-pointer"
+		onclick={() => switchTab('MUTASI')}
+		class="border-b-2 px-5 py-2.5 text-sm font-bold transition-all {activeTab === 'MUTASI'
+			? 'border-[#0A417A] text-[#0A417A]'
+			: 'border-transparent text-gray-500 hover:text-gray-700'} cursor-pointer"
 	>
 		📋 Rekap Mutasi Stok
 	</button>
-	<button 
+	<button
 		type="button"
-		onclick={() => switchTab('PEMAKAIAN')} 
-		class="px-5 py-2.5 font-bold text-sm transition-all border-b-2 {activeTab === 'PEMAKAIAN' ? 'border-[#0A417A] text-[#0A417A]' : 'border-transparent text-gray-500 hover:text-gray-700'} cursor-pointer"
+		onclick={() => switchTab('PEMAKAIAN')}
+		class="border-b-2 px-5 py-2.5 text-sm font-bold transition-all {activeTab === 'PEMAKAIAN'
+			? 'border-[#0A417A] text-[#0A417A]'
+			: 'border-transparent text-gray-500 hover:text-gray-700'} cursor-pointer"
 	>
 		📈 Analisis Pemakaian Bulanan ({data.currentYear})
 	</button>
@@ -356,36 +370,41 @@
 
 {#if activeTab === 'MUTASI'}
 	<!-- Main Table -->
-	<div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+	<div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow">
 		<div class="overflow-x-auto">
-			<table class="w-full text-left border-collapse">
+			<table class="w-full border-collapse text-left">
 				<thead>
-					<tr class="bg-gray-50 text-gray-600 text-sm border-b border-gray-200 uppercase tracking-wider">
-						<th class="px-6 py-4 font-semibold w-16 text-center italic text-xs">#</th>
+					<tr
+						class="border-b border-gray-200 bg-gray-50 text-sm tracking-wider text-gray-600 uppercase"
+					>
+						<th class="w-16 px-6 py-4 text-center text-xs font-semibold italic">#</th>
 						<th class="px-6 py-4 font-semibold">Material</th>
-						<th class="px-6 py-4 font-semibold text-center">Satuan</th>
-						<th class="px-6 py-4 font-semibold text-center bg-gray-100/50">Stok Awal</th>
-						<th class="px-6 py-4 font-semibold text-center text-green-600">Masuk (+)</th>
-						<th class="px-6 py-4 font-semibold text-center text-red-600">Keluar (-)</th>
-						<th class="px-6 py-4 font-semibold text-center bg-blue-50 text-[#0A417A]">Stok Akhir</th>
+						<th class="px-6 py-4 text-center font-semibold">Satuan</th>
+						<th class="bg-gray-100/50 px-6 py-4 text-center font-semibold">Stok Awal</th>
+						<th class="px-6 py-4 text-center font-semibold text-green-600">Masuk (+)</th>
+						<th class="px-6 py-4 text-center font-semibold text-red-600">Keluar (-)</th>
+						<th class="bg-blue-50 px-6 py-4 text-center font-semibold text-[#0A417A]">Stok Akhir</th
+						>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-100">
 					{#if data.reportData.length === 0}
 						<tr>
-							<td colspan="7" class="px-6 py-10 text-center text-gray-500 bg-gray-50/50">Tidak ada data transaksi material di periode ini.</td>
+							<td colspan="7" class="bg-gray-50/50 px-6 py-10 text-center text-gray-500"
+								>Tidak ada data transaksi material di periode ini.</td
+							>
 						</tr>
 					{:else}
 						{#each data.reportData as item, i}
-							<tr class="hover:bg-gray-50/80 transition-colors duration-150 text-sm italic">
-								<td class="px-6 py-4 text-center text-gray-400 font-medium italic">{i + 1}</td>
+							<tr class="text-sm italic transition-colors duration-150 hover:bg-gray-50/80">
+								<td class="px-6 py-4 text-center font-medium text-gray-400 italic">{i + 1}</td>
 								<td class="px-6 py-4">
-									<div class="font-bold text-[#0A417A] text-sm not-italic font-bold">{item.name}</div>
+									<div class="text-sm font-bold text-[#0A417A] not-italic">{item.name}</div>
 								</td>
 								<td class="px-6 py-4 text-center font-medium text-gray-500">
 									<span>{item.unit}</span>
 								</td>
-								<td class="px-6 py-4 text-center font-medium bg-gray-100/20 text-gray-400">
+								<td class="bg-gray-100/20 px-6 py-4 text-center font-medium text-gray-400">
 									{item.awal.toLocaleString('id-ID')}
 								</td>
 								<td class="px-6 py-4 text-center font-bold text-green-600">
@@ -394,7 +413,7 @@
 								<td class="px-6 py-4 text-center font-bold text-red-600">
 									{item.keluar > 0 ? '-' : ''}{item.keluar.toLocaleString('id-ID')}
 								</td>
-								<td class="px-6 py-4 text-center font-black bg-blue-50/30 text-[#0188CE] text-base">
+								<td class="bg-blue-50/30 px-6 py-4 text-center text-base font-black text-[#0188CE]">
 									{item.akhir.toLocaleString('id-ID')}
 								</td>
 							</tr>
@@ -410,54 +429,67 @@
 	</div>
 {:else}
 	<!-- Monthly Usage Trend Table -->
-	<div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+	<div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow">
 		<div class="overflow-x-auto">
-			<table class="w-full text-left border-collapse">
+			<table class="w-full border-collapse text-left">
 				<thead>
-					<tr class="bg-gray-50 text-gray-600 text-xs border-b border-gray-200 uppercase tracking-wider">
-						<th class="px-4 py-4 font-semibold w-12 text-center italic">#</th>
+					<tr
+						class="border-b border-gray-200 bg-gray-50 text-xs tracking-wider text-gray-600 uppercase"
+					>
+						<th class="w-12 px-4 py-4 text-center font-semibold italic">#</th>
 						<th class="px-4 py-4 font-semibold">Material</th>
-						<th class="px-4 py-4 font-semibold text-center">Satuan</th>
-						<th class="px-2 py-4 font-semibold text-center">Jan</th>
-						<th class="px-2 py-4 font-semibold text-center">Feb</th>
-						<th class="px-2 py-4 font-semibold text-center">Mar</th>
-						<th class="px-2 py-4 font-semibold text-center">Apr</th>
-						<th class="px-2 py-4 font-semibold text-center">Mei</th>
-						<th class="px-2 py-4 font-semibold text-center">Jun</th>
-						<th class="px-2 py-4 font-semibold text-center">Jul</th>
-						<th class="px-2 py-4 font-semibold text-center">Agt</th>
-						<th class="px-2 py-4 font-semibold text-center">Sep</th>
-						<th class="px-2 py-4 font-semibold text-center">Okt</th>
-						<th class="px-2 py-4 font-semibold text-center">Nov</th>
-						<th class="px-2 py-4 font-semibold text-center">Des</th>
-						<th class="px-4 py-4 font-semibold text-center bg-gray-100/50">Total</th>
-						<th class="px-4 py-4 font-semibold text-center bg-green-50 text-green-700">Rata-rata</th>
+						<th class="px-4 py-4 text-center font-semibold">Satuan</th>
+						<th class="px-2 py-4 text-center font-semibold">Jan</th>
+						<th class="px-2 py-4 text-center font-semibold">Feb</th>
+						<th class="px-2 py-4 text-center font-semibold">Mar</th>
+						<th class="px-2 py-4 text-center font-semibold">Apr</th>
+						<th class="px-2 py-4 text-center font-semibold">Mei</th>
+						<th class="px-2 py-4 text-center font-semibold">Jun</th>
+						<th class="px-2 py-4 text-center font-semibold">Jul</th>
+						<th class="px-2 py-4 text-center font-semibold">Agt</th>
+						<th class="px-2 py-4 text-center font-semibold">Sep</th>
+						<th class="px-2 py-4 text-center font-semibold">Okt</th>
+						<th class="px-2 py-4 text-center font-semibold">Nov</th>
+						<th class="px-2 py-4 text-center font-semibold">Des</th>
+						<th class="bg-gray-100/50 px-4 py-4 text-center font-semibold">Total</th>
+						<th class="bg-green-50 px-4 py-4 text-center font-semibold text-green-700">Rata-rata</th
+						>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-100">
 					{#if data.monthlyUsageData.length === 0}
 						<tr>
-							<td colspan="17" class="px-6 py-10 text-center text-gray-500 bg-gray-50/50">Tidak ada data pemakaian lapangan di tahun ini.</td>
+							<td colspan="17" class="bg-gray-50/50 px-6 py-10 text-center text-gray-500"
+								>Tidak ada data pemakaian lapangan di tahun ini.</td
+							>
 						</tr>
 					{:else}
 						{#each data.monthlyUsageData as item, i}
-							<tr class="hover:bg-gray-50/80 transition-colors duration-150 text-sm italic">
-								<td class="px-4 py-3.5 text-center text-gray-400 font-medium italic">{i + 1}</td>
+							<tr class="text-sm italic transition-colors duration-150 hover:bg-gray-50/80">
+								<td class="px-4 py-3.5 text-center font-medium text-gray-400 italic">{i + 1}</td>
 								<td class="px-4 py-3.5">
-									<div class="font-bold text-[#0A417A] text-sm not-italic">{item.name}</div>
+									<div class="text-sm font-bold text-[#0A417A] not-italic">{item.name}</div>
 								</td>
 								<td class="px-4 py-3.5 text-center">
-									<span class="text-gray-500 font-medium not-italic text-xs">{item.unit}</span>
+									<span class="text-xs font-medium text-gray-500 not-italic">{item.unit}</span>
 								</td>
 								{#each item.months as monthVal}
-									<td class="px-2 py-3.5 text-center font-medium not-italic text-xs {monthVal > 0 ? 'text-gray-900 font-bold' : 'text-gray-300'}">
+									<td
+										class="px-2 py-3.5 text-center text-xs font-medium not-italic {monthVal > 0
+											? 'font-bold text-gray-900'
+											: 'text-gray-300'}"
+									>
 										{monthVal > 0 ? monthVal.toLocaleString('id-ID') : '-'}
 									</td>
 								{/each}
-								<td class="px-4 py-3.5 text-center font-bold bg-gray-100/10 text-gray-700 not-italic">
+								<td
+									class="bg-gray-100/10 px-4 py-3.5 text-center font-bold text-gray-700 not-italic"
+								>
 									{item.total.toLocaleString('id-ID')}
 								</td>
-								<td class="px-4 py-3.5 text-center font-black bg-green-50/30 text-green-700 not-italic text-sm">
+								<td
+									class="bg-green-50/30 px-4 py-3.5 text-center text-sm font-black text-green-700 not-italic"
+								>
 									{item.avg.toLocaleString('id-ID')}
 								</td>
 							</tr>

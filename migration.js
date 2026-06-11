@@ -13,7 +13,7 @@ async function runMigration() {
 	}
 
 	try {
-        console.log('Adding usage_purpose to transactions...');
+		console.log('Adding usage_purpose to transactions...');
 		await connection.execute(`ALTER TABLE transactions ADD COLUMN usage_purpose VARCHAR(255);`);
 	} catch (e) {
 		console.log('usage_purpose may already exist:', e.message);

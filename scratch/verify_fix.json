@@ -1,87 +1,87 @@
 {
-  "totalRows": 34,
-  "nonZeroAwal": 34,
-  "zeroAwal": 0,
-  "sampleRows": [
-    {
-      "id": 224,
-      "name": "CABLE PWR ACC;CABLE SHOE AL-CU 1H 150mm2",
-      "awal": 1873,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 1873
-    },
-    {
-      "id": 221,
-      "name": "CABLE PWR ACC;CABLE SHOE AL-CU 1H 50mm2",
-      "awal": 204,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 204
-    },
-    {
-      "id": 222,
-      "name": "CABLE PWR ACC;CABLE SHOE AL-CU 1H 70mm2",
-      "awal": 1065,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 1065
-    },
-    {
-      "id": 229,
-      "name": "CABLE PWR ACC;CABLE SHOE AL-CU 2H 150mm2",
-      "awal": 57,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 57
-    },
-    {
-      "id": 228,
-      "name": "CABLE PWR ACC;CABLE SHOE AL-CU 2H 70mm2",
-      "awal": 2,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 2
-    },
-    {
-      "id": 244,
-      "name": "CABLE PWR ACC;CABLE SHOE CU ID 1H 150mm2",
-      "awal": 502,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 502
-    },
-    {
-      "id": 240,
-      "name": "CABLE PWR ACC;CABLE SHOE CU ID 1H 50mm2",
-      "awal": 1220,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 1220
-    },
-    {
-      "id": 241,
-      "name": "CABLE PWR ACC;CABLE SHOE CU ID 1H 70mm2",
-      "awal": 614,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 614
-    },
-    {
-      "id": 248,
-      "name": "CABLE PWR ACC;CABLE SHOE CU OD 1H 150mm2",
-      "awal": 37,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 37
-    },
-    {
-      "id": 150,
-      "name": "CLAMP;G;AL;10-16/10-16mm2;PRS",
-      "awal": 95,
-      "masuk": 0,
-      "keluar": 0,
-      "akhir": 95
-    }
-  ]
+	"totalRows": 34,
+	"nonZeroAwal": 34,
+	"zeroAwal": 0,
+	"sampleRows": [
+		{
+			"id": 224,
+			"name": "CABLE PWR ACC;CABLE SHOE AL-CU 1H 150mm2",
+			"awal": 1873,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 1873
+		},
+		{
+			"id": 221,
+			"name": "CABLE PWR ACC;CABLE SHOE AL-CU 1H 50mm2",
+			"awal": 204,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 204
+		},
+		{
+			"id": 222,
+			"name": "CABLE PWR ACC;CABLE SHOE AL-CU 1H 70mm2",
+			"awal": 1065,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 1065
+		},
+		{
+			"id": 229,
+			"name": "CABLE PWR ACC;CABLE SHOE AL-CU 2H 150mm2",
+			"awal": 57,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 57
+		},
+		{
+			"id": 228,
+			"name": "CABLE PWR ACC;CABLE SHOE AL-CU 2H 70mm2",
+			"awal": 2,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 2
+		},
+		{
+			"id": 244,
+			"name": "CABLE PWR ACC;CABLE SHOE CU ID 1H 150mm2",
+			"awal": 502,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 502
+		},
+		{
+			"id": 240,
+			"name": "CABLE PWR ACC;CABLE SHOE CU ID 1H 50mm2",
+			"awal": 1220,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 1220
+		},
+		{
+			"id": 241,
+			"name": "CABLE PWR ACC;CABLE SHOE CU ID 1H 70mm2",
+			"awal": 614,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 614
+		},
+		{
+			"id": 248,
+			"name": "CABLE PWR ACC;CABLE SHOE CU OD 1H 150mm2",
+			"awal": 37,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 37
+		},
+		{
+			"id": 150,
+			"name": "CLAMP;G;AL;10-16/10-16mm2;PRS",
+			"awal": 95,
+			"masuk": 0,
+			"keluar": 0,
+			"akhir": 95
+		}
+	]
 }

@@ -4,7 +4,6 @@ import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { users } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import bcrypt from 'bcryptjs';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	// If already logged in, redirect to dashboard
@@ -23,10 +22,10 @@ export const actions = {
 			return fail(400, { error: 'Username dan Password harus diisi.' });
 		}
 
-		// Check using bcrypt
+		// Check plain text password
 		const [user] = await db.select().from(users).where(eq(users.username, username));
 
-		if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+		if (!user || user.passwordHash !== password) {
 			return fail(401, { error: 'Kombinasi Username dan Password salah.' });
 		}
 
